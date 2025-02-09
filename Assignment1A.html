@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>ActModel</title>
+<link rel="stylesheet" href="./style.css">
+<script src="./sliders.js"></script>
+<script src="./artistoo.js"></script>
+<script>
+"use strict"
+
+
+/*	----------------------------------
+	CONFIGURATION SETTINGS
+	----------------------------------
+*/
+
+let N_OBSTACLES = 10		// number of obstacles on side of the obstacle square
+let CELL_SIZE = 100 	// obstacle size will be half of this
+
+let config = {
+
+	// Grid settings
+	ndim : 2,
+	field_size : [250,250], // width, height
+
+	// CPM parameters and configuration
+	conf : {
+		// Basic CPM parameters
+		torus : [true,true],				// Should the grid have linked borders?
+		seed : 1,							// Seed for random number generation.
+		T : 20,								// CPM temperature
+
+		// Constraint parameters.
+		// Mostly these have the format of an array in which each element specifies the
+		// parameter value for one of the cellkinds on the grid.
+		// First value is always cellkind 0 (the background) and is often not used.
+
+		// Adhesion parameters:
+		J: [[0, 20, 20],
+			[20, 0, 0],
+			[20, 0, 0]],
+
+		// VolumeConstraint parameters
+		LAMBDA_V: [0,50,50],					// VolumeConstraint importance per cellkind
+		V: [0,200,80],		// Target volume of each cellkind
+
+		// PerimeterConstraint parameters
+		LAMBDA_P: [0,2,50],				// PerimeterConstraint importance per cellkind
+		P : [0,180,30],					// Target perimeter of each cellkind
+
+		// ActivityConstraint parameters
+		LAMBDA_ACT : [0,200,0],				// ActivityConstraint importance per cellkind
+		MAX_ACT : [0,80,0],					// Activity memory duration per cellkind
+		ACT_MEAN : "geometric"				// Is neighborhood activity computed as a
+											// "geometric" or "arithmetic" mean?
+	},
+
+	// Simulation setup and configuration
+	simsettings : {
+
+		// Cells on the grid
+		NRCELLS : [1, N_OBSTACLES*N_OBSTACLES],	// Number of cells to seed for all non-background cellkinds
+		// Runtime etc
+		BURNIN : 500,
+		RUNTIME : 1000,
+		RUNTIME_BROWSER : "Inf",
+
+		// Visualization
+		CANVASCOLOR : "eaecef",
+		CELLCOLOR : ["000000","0000FF"],
+		ACTCOLOR : [true],					// Should pixel activity values be displayed?
+		SHOWBORDERS : [false],				// Should cellborders be displayed?
+		zoom : 2,							// zoom in on canvas with this factor.
+
+		// Output images
+		SAVEIMG : true,					// Should a png image of the grid be saved
+											// during the simulation?
+		IMGFRAMERATE : 1,					// If so, do this every <IMGFRAMERATE> MCS.
+		SAVEPATH : "output/img/ActModel",	// ... And save the image in this folder.
+		EXPNAME : "ActModel",					// Used for the filename of output images.
+
+		// Output stats etc
+		STATSOUT : { browser: false, node: true }, // Should stats be computed?
+		LOGRATE : 10							// Output stats every <LOGRATE> MCS.
+	}
+}
+/*	---------------------------------- */
+let sim, meter
+
+function initialize() {
+	let custommethods = {
+	 	initializeGrid : initializeGrid
+	}
+
+	sim = new CPM.Simulation( config, custommethods )
+
+	step()
+}
+
+function step() {
+	sim.step()
+
+	if ( sim.conf["RUNTIME_BROWSER"] == "Inf" | sim.time+1 < sim.conf["RUNTIME_BROWSER"] ) {
+		requestAnimationFrame( step )
+	}
+}
+
+function setSliders(){
+	document.getElementById("temp").value = config.conf.T
+	document.getElementById("j-cell-back").value = config.conf.J[1][0]
+	document.getElementById("j-cell-cell").value = config.conf.J[1][1]
+	document.getElementById("j-cell-obst").value = config.conf.J[1][2]
+	document.getElementById("j-obst-back").value = config.conf.J[2][0]
+	document.getElementById("j-obst-cell").value = config.conf.J[2][1]
+	document.getElementById("j-obst-obst").value = config.conf.J[2][2]
+	document.getElementById("volume").value = config.conf.V[1]
+	document.getElementById("lvolume").value = config.conf.LAMBDA_V[1]
+	document.getElementById("perim").value = config.conf.P[1]
+	document.getElementById("lperim").value = config.conf.LAMBDA_P[1]
+	document.getElementById("mact").value = config.conf.MAX_ACT[1]
+	document.getElementById("lact").value = config.conf.LAMBDA_ACT[1]
+	document.getElementById("V_obs").value = config.conf.V[2]
+	document.getElementById("P_obs").value = config.conf.P[2]	
+}
+
+function initializeGrid() {
+	// add the initializer if not already there
+	if( !this.helpClasses["gm"] ){ this.addGridManipulator() }
+
+	// add obstacles
+	let row_spacing = Math.ceil(config.field_size[1] / (N_OBSTACLES + 1))
+	let col_spacing = Math.ceil(config.field_size[0] / (N_OBSTACLES + 1))
+	for ( var row = 1; row <= N_OBSTACLES; row += 1 ) {
+		for ( var col = 1; col <= N_OBSTACLES; col += 1 ) {
+			this.gm.seedCellAt( 2, [ col * col_spacing, row * row_spacing ])
+		}
+	}
+}
+
+function seedCell()
+{
+	for ( var i = 0; i < 100; i += 1 ) {
+	sim.gm.seedCellAt( 1, [ Math.ceil(Math.random() * config.field_size[0]), Math.ceil(Math.random() * config.field_size[1]) ] );
+	// sim.gm.seedCellAt( 1, [ 1, 1] );
+	}
+}
+
+</script>
+</head>
+<body onload="initialize();setSliders();initializeSliders()">
+<h1>Cell migration with obstacles</h1>
+
+<div style="width:400px">
+<p>
+CPM of cell movement with obstacles.
+</p>
+</div>
+
+<table width="800px"><tr>
+	<td style="width:10%">adh<sub>cell-back</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:13%">
+		<div class="range-wrap">
+		<input type="range" class="range" min="0" max="100" id="j-cell-back" oninput="sim.C.getConstraint('ActivityConstraint').conf.J[1][0]=parseInt(this.value);sim.C.getConstraint('ActivityConstraint').conf.J[0][1]=parseInt(this.value)">
+		<output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+
+<td style="width:10%">adh<sub>cell-cell</sub></td>
+<td style="width:5%">0</td>
+<td style="width:13%">
+	<div class="range-wrap">
+	<input type="range" class="range" min="0" max="100" id="j-cell-cell" oninput="sim.C.getConstraint('ActivityConstraint').conf.J[1][1]=parseInt(this.value)">
+	<output class="bubble"></output>
+	</div>
+</td>
+<td style="width:5%">100</td>
+
+<td style="width:10%">adh<sub>cell-obs</sub></td>
+<td style="width:5%">0</td>
+<td style="width:13%">
+	<div class="range-wrap">
+	<input type="range" class="range" min="0" max="100" id="j-cell-obst" oninput="sim.C.getConstraint('ActivityConstraint').conf.J[1][2]=parseInt(this.value)">
+	<output class="bubble"></output>
+	</div>
+</td>
+<td style="width:5%">100</td>
+</tr></table>
+
+<table width="800px"><tr>
+	<td style="width:10%">adh<sub>obs-back</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:13%">
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="100" id="j-obst-back" oninput="sim.C.getConstraint('ActivityConstraint').conf.J[2][0]=parseInt(this.value);sim.C.getConstraint('ActivityConstraint').conf.J[0][2]=parseInt(this.value)">
+	      <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+
+	<td style="width:10%">adh<sub>obst-cell</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:13%">
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="100" id="j-obst-cell" oninput="sim.C.getConstraint('ActivityConstraint').conf.J[2][1]=parseInt(this.value)">
+	      <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+
+	<td style="width:10%">adh<sub>obst-obst</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:13%">
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="100" id="j-obst-obst" oninput="sim.C.getConstraint('ActivityConstraint').conf.J[2][2]=parseInt(this.value)">
+	      <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+</tr></table>
+
+<table width="800px">
+	<tr>
+		<td style="width:10%">P</td>
+		<td style="width:5%">0</td>
+		<td style="width:30%">
+			<div class="range-wrap">
+			  <input type="range" class="range" min="0" max="1000" id="perim" oninput="sim.C.getConstraint('ActivityConstraint').conf.P[1]=parseInt(this.value)" >
+			  <output class="bubble"></output>
+			</div>
+		</td>
+		<td style="width:5%">1000</td>
+
+		<td style="width:10%">&lambda;<sub>P</sub></td>
+		<td style="width:5%">0</td>
+		<td style="width:30%">
+			<div class="range-wrap">
+			  <input type="range" class="range" min="0" max="1000" id="lperim" oninput="sim.C.getConstraint('ActivityConstraint').conf.LAMBDA_P[1]=parseInt(this.value)" >
+			  <output class="bubble"></output>
+			</div>
+		</td>
+		<td style="width:5%">1000</td>
+	</tr>
+</table>
+
+<table width="800px">
+	<tr>
+		<td style="width:10%">V</td>
+		<td style="width:5%">0</td>
+		<td style="width:30%">
+			<div class="range-wrap">
+			  <input type="range" class="range" min="0" max="1000" id="volume" oninput="sim.C.getConstraint('ActivityConstraint').conf.V[1]=parseInt(this.value)" >
+			  <output class="bubble"></output>
+			</div>
+		</td>
+		<td style="width:5%">1000</td>
+
+		<td style="width:10%">&lambda;<sub>V</sub></td>
+		<td style="width:5%">0</td>
+		<td style="width:30%">
+			<div class="range-wrap">
+			  <input type="range" class="range" min="0" max="1000" id="lvolume" oninput="sim.C.getConstraint('ActivityConstraint').conf.LAMBDA_V[1]=parseInt(this.value)" >
+			  <output class="bubble"></output>
+			</div>
+		</td>
+		<td style="width:5%">1000</td>
+	</tr>
+</table>
+
+<table width="800px">
+<tr>
+	<td style="width:20%">T</td>
+	<td style="width:5%">0</td>
+	<td style="width:70%">
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="100" id="temp" oninput="sim.C.getConstraint('ActivityConstraint').conf.T=parseInt(this.value)" >
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+</tr>
+<tr>
+	<td style="width:20%">&lambda;<sub>act</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:70%">
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="1000" id="lact" oninput="sim.C.getConstraint('ActivityConstraint').conf.LAMBDA_ACT[1]=parseInt(this.value)">
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">1000</td>
+</tr>
+<tr>
+	<td style="width:20%">max<sub>act</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:70%">
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="100" id="mact" oninput="sim.C.getConstraint('ActivityConstraint').conf.MAX_ACT[1]=parseInt(this.value)" >
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+</tr>
+</table>
+<button onclick="seedCell()">Seed cell</button>
+<br>
+
+
+
+</body>
+</html>
