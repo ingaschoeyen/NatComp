@@ -1,7 +1,7 @@
 # Code of Group 13 for SOW-IMC042 Natural Computing (24/25)
 
 Our group consists of:
-* Roman Dvorak (s)
+* Roman Dvorak (s1157838)
 * Kelly Karremans (s4802802)
 * Inga Schöyen (s1127295)
 
