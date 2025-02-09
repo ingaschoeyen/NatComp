@@ -41,7 +41,7 @@ let config = {
 
 		// VolumeConstraint parameters
 		LAMBDA_V: [0,50,50],					// VolumeConstraint importance per cellkind
-		V: [0,200,200],		// Target volume of each cellkind
+		V: [0,200,130],		// Target volume of each cellkind
 
 		// PerimeterConstraint parameters
 		LAMBDA_P: [0,2,50],				// PerimeterConstraint importance per cellkind
@@ -58,7 +58,7 @@ let config = {
 	simsettings : {
 
 		// Cells on the grid
-		NRCELLS : [1, N_OBSTACLES*N_OBSTACLES],	// Number of cells to seed for all non-background cellkinds
+		NRCELLS : [1, 100],	// Number of cells to seed for all non-background cellkinds
 		// Runtime etc
 		BURNIN : 500,
 		RUNTIME : 1000,
