@@ -1,4 +1,4 @@
-# Code of Group 13 for SOW-IMC042 Natural Computing (24/25)
+# Code of Group 7 for SOW-IMC042 Natural Computing (24/25)
 
 Our group consists of:
 * Roman Dvorak (s1157838)
