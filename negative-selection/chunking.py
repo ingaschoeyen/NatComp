@@ -8,14 +8,13 @@ n = int(sys.argv[2])
 overlap = int(sys.argv[3])
 
 def chunk_sequence(sequence, chunk_size, overlap):
-    chunks = []
-    start = 0
-    while start + chunk_size <= len(sequence):
-        chunks.append(sequence[start : start + chunk_size])
-        start += (chunk_size - overlap)
-    missing = chunk_size - len(sequence) + start
-    chunks.append(sequence[start:] + sequence[:missing])
-    return chunks
+    chunks = [sequence[end - chunk_size : end] for end in range(chunk_size, len(sequence), chunk_size - overlap)]
+    left = len(sequence) % (chunk_size - overlap)
+    last_chunk = sequence[-left:]
+    while len(last_chunk) < chunk_size:
+        last_chunk += sequence
+    last_chunk = last_chunk[:chunk_size]
+    return chunks + [last_chunk]
 
 with open(sys.argv[1], 'r') as data_in, open(sys.argv[4], 'w') as data_out, open(sys.argv[5], 'w') as labels:
 
