@@ -3,7 +3,10 @@ from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 
 
+'''
+takes in two lists of file names, negative and positive, returns figure with ROC curve
 
+'''
 
 
 negres_files = sys.argv[1].split()
