@@ -1,6 +1,4 @@
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
 
 # sys args: data.in n overlap data.out labels.out
 

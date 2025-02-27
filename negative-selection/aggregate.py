@@ -1,5 +1,4 @@
 import sys
-import numpy as np
 
 # sys args: scores.in labels scores.out
 

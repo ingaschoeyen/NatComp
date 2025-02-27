@@ -2,14 +2,9 @@ import sys
 from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 
+# sys args: score.pos score.neg figurepath.out
+
 posvals, negvals, posvals_lab, negvals_lab = [], [], [], []
-
-# print(sys.argv[1], sys.argv[2], sys.argv[3])
-
-# sys.argv = [0, 0, 0, 0]
-# sys.argv[1] = '/home/jarom/school/natcomp/ass2negsel/posresults4'
-# sys.argv[2] = '/home/jarom/school/natcomp/ass2negsel/negresults4'
-# sys.argv[3] = '/home/jarom/school/natcomp/ass2negsel/fig4.png'
 
 with open(sys.argv[1]) as posresults, open(sys.argv[2]) as negresults:
     for line in posresults:
@@ -47,10 +42,6 @@ for i, (val, ispos) in enumerate(sortedvals):
         sensitivity[-1] = tp / len(posvals)
         specificity[-1] = 1 - tn / len(negvals)
     lastval = val
-
-# Does weird stuff
-# sensitivity = sensitivity + [1]
-# specificity = specificity + [1]
 
 fig, ax = plt.subplots()
 plt.xlabel("1 - Specificity")
