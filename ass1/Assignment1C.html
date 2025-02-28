@@ -125,10 +125,10 @@ function initializeGrid() {
 	if( !this.helpClasses["gm"] ){ this.addGridManipulator() }
 
 	// add obstacles
-	let row_spacing = Math.ceil(config.field_size[1] / (N_OBSTACLES + 1))
-	let col_spacing = Math.ceil(config.field_size[0] / (N_OBSTACLES + 1))
-	for ( var row = 1; row <= N_OBSTACLES; row += 1 ) {
-		for ( var col = 1; col <= N_OBSTACLES; col += 1 ) {
+	let row_spacing = Math.ceil(config.field_size[1] / (N_OBSTACLES))
+	let col_spacing = Math.ceil(config.field_size[0] / (N_OBSTACLES))
+	for ( var row = 0; row < N_OBSTACLES; row += 1 ) {
+		for ( var col = 0; col < N_OBSTACLES; col += 1 ) {
 			this.gm.seedCellAt( 2, [ col * col_spacing, row * row_spacing ])
 		}
 	}
