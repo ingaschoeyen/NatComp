@@ -121,17 +121,25 @@ function setSliders(){
 }
 
 function initializeGrid() {
-	// add the initializer if not already there
-	if( !this.helpClasses["gm"] ){ this.addGridManipulator() }
+    // Add the initializer if not already there
+    if( !this.helpClasses["gm"] ){ this.addGridManipulator() }
 
-	// add obstacles
-	let row_spacing = Math.ceil(config.field_size[1] / (N_OBSTACLES))
-	let col_spacing = Math.ceil(config.field_size[0] / (N_OBSTACLES))
-	for ( var row = 0; row < N_OBSTACLES; row += 1 ) {
-		for ( var col = 0; col < N_OBSTACLES; col += 1 ) {
-			this.gm.seedCellAt( 2, [ col * col_spacing, row * row_spacing ])
-		}
-	}
+    // Calculate spacing for hexagonal grid
+    let col_spacing = Math.ceil( config.field_size[0] / (N_OBSTACLES) );
+    // let row_spacing = Math.ceil( col_spacing * Math.sqrt(3) / 2 );
+    let row_spacing = Math.ceil(config.field_size[1] / (N_OBSTACLES))
+    // Seed obstacles in hexagonal pattern
+    for ( let row = 0; row < N_OBSTACLES; row+=1 ) {
+        let x_offset = (row % 2 === 0) ? 0 : col_spacing / 2;
+        for ( let col = 0; col < N_OBSTACLES; col+=1 ) {
+            let x = x_offset + col * col_spacing;
+            let y = row * row_spacing;
+            // Ensure the obstacle is within the field boundaries
+            if (x < config.field_size[0] && y < config.field_size[1]) {
+                this.gm.seedCellAt( 2, [x, y] );
+            }
+        }
+    }
 }
 
 function seedCell()
