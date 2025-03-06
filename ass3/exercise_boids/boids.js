@@ -255,26 +255,63 @@ class Particle {
 	// should return a unit vector in average neighbor direction for neighbors within 
 	// distance neighborRadius 
 	alignmentVector( neighborRadius ){
-		
-		return this.dir
+		let sum = [0,0]	
+		let counter = 0
+		// loop over all neighbours in neighborRadius
+		for (let n of this.S.neighbours(this, neighborRadius)){
+			// add the direction of the neighbor
+			sum = this.addVectors(sum, n.dir)
+		}		
+		if (counter == 0){
+			return [0,0]
+		}
+		else{
+			sum.map(i => i/counter)
+			return this.subtractVectors(sum, this.dir )
+		}
 	
 	}
 	
 	// should return a unit vector in the direction from current position to the 
 	// average position of neighbors within distance neighborRadius 
 	cohesionVector( neighborRadius ){
-		
-		return this.dir
+		let sum = [0,0]
+		let counter = 0
+		// loop over all neighbours in neighborRadius
+		for (let n of this.S.neighbours(this, neighborRadius)){
+			// add the position of the neighbor
+			sum = this.addVectors(sum, n.pos)
+			counter++
+		}
+		if (counter == 0){
+			return [0,0]
+		}
+		else{
+			sum.map(i => i/counter)
+			return this.subtractVectors(sum, this.pos)
+		}
 	
 	}
 	
 	// as cohesionVector, but now return the opposite direction for the given 
 	separationVector( neighborRadius ){
-		
-		return this.dir 
-		
+		let sum = [0,0]
+		let counter = 0	
+		// loop over all neighbours in neighborRadius
+		for (let n of this.S.neighbours(this, neighborRadius)){
+			// add the position of the neighbor
+			sum = this.addVectors(sum, this.pos-n.pos)
+			counter++
+		}
+		if (counter == 0){	
+			return [0,0]
+		}
+		else{
+			return this.normalizeVector(this.subtractVectors(sum, this.pos))
+		}
 	}
 	
+
 	updateVector(){
 		
 		let align_weight = this.S.conf.alignment
@@ -283,16 +320,19 @@ class Particle {
 		
 		const align = this.multiplyVector( this.alignmentVector( this.S.conf.outerRadius ), align_weight )
 		const cohesion = this.multiplyVector(this.cohesionVector( this.S.conf.outerRadius ), cohesion_weight )
-		const separation = this.multiplyVector( this.separationVector(this.S.conf.innerRadius ), separation_weight )
+		const separation = this.multiplyVector( this.separationVector(this.S.conf.innerRadius), separation_weight )
 		
 		// Add your code to combine the particle's current this.dir with the (weighted)
 		// alignment, cohesion, and separation directions. 
 		// Make sure to update the properties this.dir and this.pos accordingly.
 		// What happens when the new position lies across the field boundary? 
 		
-		this.pos = this.pos
-		this.dir = this.dir 	
-		
+		this.dir = this.addVectors( this.dir, align )
+		this.dir = this.addVectors( this.dir, cohesion )
+		this.dir = this.addVectors( this.dir, separation )
+		this.dir = this.normalizeVector( this.dir )
+		this.pos = this.S.wrap( this.addVectors( this.pos, this.multiplyVector( this.dir, this.speed ) ) )
+
 	}
 	
 }
