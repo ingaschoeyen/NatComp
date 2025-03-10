@@ -361,3 +361,21 @@ function initialize(){
 	
 }
 
+function simulate(max_iter = 1000){
+	let output = []
+	initialize()
+	for (let i = 0; i < max_iter; i++){
+		S.step()
+		output.push(S.getAngles())
+		if (length(S.swarm) == 1){
+			console.log("Converged at "  + i + " iterations")
+			break
+		}
+	}
+}
+
+import { fileURLToPath } from "url";
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  simulate()
+}
