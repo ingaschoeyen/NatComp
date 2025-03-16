@@ -322,10 +322,6 @@ class Particle {
 		const cohesion = this.multiplyVector(this.cohesionVector( this.S.conf.outerRadius ), cohesion_weight )
 		const separation = this.multiplyVector( this.separationVector(this.S.conf.innerRadius), separation_weight )
 		
-		// Add your code to combine the particle's current this.dir with the (weighted)
-		// alignment, cohesion, and separation directions. 
-		// Make sure to update the properties this.dir and this.pos accordingly.
-		// What happens when the new position lies across the field boundary? 
 		
 		this.dir = this.addVectors( this.dir, align )
 		this.dir = this.addVectors( this.dir, cohesion )
@@ -372,10 +368,4 @@ function simulate(max_iter = 1000){
 			break
 		}
 	}
-}
-
-import { fileURLToPath } from "url";
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  simulate()
 }
