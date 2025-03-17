@@ -54,8 +54,8 @@ for i in range(1, max):
             std_range_up = []
             std_range_down = []
             for i in data['dist_mean']:
-                std_range_up.append(i + data['dist_var'][0])
-                std_range_down.append(i - data['dist_var'][0])
+                std_range_up.append(i + np.sqrt(data['dist_var'][0]))
+                std_range_down.append(i - np.sqrt(data['dist_var'][0]))
             # plot order parameter and average nearest neighbour distance
             plt.figure()
             plt.plot(data['order_parameter'], label='O')
