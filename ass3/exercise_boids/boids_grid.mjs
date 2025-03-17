@@ -233,18 +233,29 @@ class Scene {
 	}	
 	
     getNeighboursDist(){
-		let rs = []
 		let dists = []
 		for( let p of this.swarm ){
-			let	dists_int
-            dists_int = this.neighbours(p, this.conf.outerRadius).map(x => this.dist(x.pos, p.pos))
-            dists.push(dists_int.filter(x => Math.min(x)))
+       		 // Calculate distances to all neighbors
+        	let dists_int = this.neighbours(p, this.conf.outerRadius).map(x => this.dist(x.pos, p.pos));
+       		 // Add distances to the main array
+			let dists_int2 = 0
+			let count = 0
+			if (dists_int.length > 0){
+        		for (let d of dists_int){
+					if (d != NaN){
+						dists_int2 += d
+						count++
+					}
+				}
+				dists.push(dists_int2/count)
+			}
+			else{
+				dists.push(0)
+			}
     	}	
-		let mean, variance
-		mean = dists.reduce((a, b) => a + b) / dists.length
-		variance = dists.reduce((a, b) => a + (b - mean) ** 2) / dists.length
-		rs.push([mean, variance])
-        return rs
+		let mean = dists.reduce((a, b) => a + b) / dists.length
+		let variance = dists.reduce((a, b) => a + (b - mean) ** 2) / dists.length
+        return {means: mean, variances: variance}
     }   
 
 	step(){
@@ -397,7 +408,7 @@ function initialize(){
 	
 }
 
-function simulate(max_iter = 1000){
+function simulate(max_iter = 5000){
 	let order = []
     let dist_mean= []
 	let dist_var = []
@@ -406,10 +417,32 @@ function simulate(max_iter = 1000){
 	for (let i = 0; i < max_iter; i++){
 		S.step()
         // push average normalised angle
-        order.push(S.getAngles().reduce((a, b) => a + b) / S.getAngles().length)
+		let angles = S.getAngles()
+		// console.log(angles)
+		if (angles.length > 0) {
+			let order_int = 0
+			let i = 0
+			for (let a of angles){
+				// console.log(a)
+				if (Object.is(NaN, a)){
+					continue
+				}
+				else{
+					order_int += a
+					i += 1
+				}
+			}
+			// console.log(order_int)
+			order.push(order_int/ i);
+        } else {
+            order.push(0); // Handle case where no angles are available
+        }
+
+
         // push average distance and variance
-		let mean, variance
-        [mean, variance] = S.getNeighboursDist().reduce((a, b) => [a[0] + b[0], a[1] + b[1]])
+        let dists = S.getNeighboursDist()
+		let mean = dists.means
+		let variance = dists.variances
 		dist_mean.push(mean)
 		dist_var.push(variance)
 		// check if converged
@@ -447,9 +480,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 		separation : max/j,
 		alignment : max/k
 	}
-	let conf = config
-	let order, dist_mean, dist_var, conv_iter		
-  	[order, dist_mean, dist_var, conv_iter, N] = simulate()
+	let conf = config	
+	let [order, dist_mean, dist_var, conv_iter, N_fin] = simulate();
 
 	// save outputs into JSON dictionary
     let output = {
@@ -457,7 +489,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 		"dist_mean": dist_mean,
 		"dist_var": dist_var,
         "converged": conv_iter,
-        "N": N
+        "N": N_fin
     }
 	saveDataToFile(N, i, j, k, output)
 }

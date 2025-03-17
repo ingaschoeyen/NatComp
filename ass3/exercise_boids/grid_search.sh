@@ -1,7 +1,7 @@
 #!/bin/bash
 # Usage: ./run.sh [N] [cohesion] [separation] [alignment]
 N=100
-max=16
+max=4
 for i in $(seq 1 $max)
 do
     for j in $(seq 1 $max)
