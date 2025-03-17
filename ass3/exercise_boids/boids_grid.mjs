@@ -1,3 +1,27 @@
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
+
+
+// Ensure the output directory exists
+const outputDir = 'boids_output';
+if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+}
+
+// Example function to save data to a JSON file
+function saveDataToFile(N, cohesion, separation, alignment, data) {
+    const filename = `output_${N}_${cohesion}_${separation}_${alignment}.json`;
+    const filePath = path.join(outputDir, filename);
+
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        console.log(`Data saved to ${filePath}`);
+    } catch (err) {
+        console.error(`Error saving data to ${filePath}:`, err);
+    }
+}
+
 let canvas, S
 let conf = {
 	w : 400,
@@ -10,6 +34,7 @@ let conf = {
 	separation : 1,
 	alignment : 1
 }
+
 
 class Canvas {
 	constructor( Scene, conf ){
@@ -207,6 +232,21 @@ class Scene {
 		return r
 	}	
 	
+    getNeighboursDist(){
+		let rs = []
+		let dists = []
+		for( let p of this.swarm ){
+			let	dists_int
+            dists_int = this.neighbours(p, this.conf.outerRadius).map(x => this.dist(x.pos, p.pos))
+            dists.push(dists_int.filter(x => Math.min(x)))
+    	}	
+		let mean, variance
+		mean = dists.reduce((a, b) => a + b) / dists.length
+		variance = dists.reduce((a, b) => a + (b - mean) ** 2) / dists.length
+		rs.push([mean, variance])
+        return rs
+    }   
+
 	step(){
 		for( let p of this.swarm ){
 			p.updateVector()
@@ -339,7 +379,7 @@ function initialize(){
 	
 	S = new Scene( conf )
 	canvas = new Canvas( S, conf )
-	canvas.drawSwarm()
+	// canvas.drawSwarm()
 	
 	let angles = []
 
@@ -358,12 +398,66 @@ function initialize(){
 }
 
 function simulate(max_iter = 1000){
-	initialize()
+	let order = []
+    let dist_mean= []
+	let dist_var = []
+	let S = new Scene( conf )
+	// initialize()
 	for (let i = 0; i < max_iter; i++){
 		S.step()
-		if (length(S.swarm) == 1){
+        // push average normalised angle
+        order.push(S.getAngles().reduce((a, b) => a + b) / S.getAngles().length)
+        // push average distance and variance
+		let mean, variance
+        [mean, variance] = S.getNeighboursDist().reduce((a, b) => [a[0] + b[0], a[1] + b[1]])
+		dist_mean.push(mean)
+		dist_var.push(variance)
+		// check if converged
+		if (S.swarm.length == 1){
 			console.log("Converged at "  + i + " iterations")
-			break
+            iter_conv = i
+			return [order, dist_mean, dist_var, iter_conv, S.getAngles().length]
 		}
+        else if(i == max_iter-1){
+            console.log("Not converged")
+            return [order, dist_mean, dist_var, max_iter, S.getAngles().length]
+        }
 	}
+}
+
+
+
+
+
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    let N = process.argv[2]
+    let i = process.argv[3]
+    let j = process.argv[4]
+    let k = process.argv[5]
+	let max = process.argv[6]
+	let config = {	
+		w : 400,
+		h : 400,
+		N  : N,
+		zoom : 1,
+		innerRadius : 10,
+		outerRadius : 25,
+		cohesion : max/i,
+		separation : max/j,
+		alignment : max/k
+	}
+	let conf = config
+	let order, dist_mean, dist_var, conv_iter		
+  	[order, dist_mean, dist_var, conv_iter, N] = simulate()
+
+	// save outputs into JSON dictionary
+    let output = {
+        "order_parameter": order,
+		"dist_mean": dist_mean,
+		"dist_var": dist_var,
+        "converged": conv_iter,
+        "N": N
+    }
+	saveDataToFile(N, i, j, k, output)
 }

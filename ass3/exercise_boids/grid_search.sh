@@ -1,18 +1,17 @@
 #!/bin/bash
 # Usage: ./run.sh [N] [cohesion] [separation] [alignment]
 N=100
-
-for i in {1..10}
+max=16
+for i in $(seq 1 $max)
 do
-    for j in {1..10}
+    for j in $(seq 1 $max)
     do
-        for k in {1..10}
+        for k in $(seq 1 $max)
         do
-            echo "Running simulation with N=$N, cohesion=$j, separation=$k, alignment=$l"
-            javascript boids.js $N $i $j $k > boids_out/boids_N$N_C$i_S$j_A$k.txt 
-            python boid_plots.py plots/boids_N$N_C$i_S$j_A$k
+            echo "Running simulation with N=$N, cohesion=$i, separation=$j, alignment=$k"
+            node boids_grid.mjs $N $i $j $k $max
         done
     done
 done
 # usage ./grid_search.sh 
-python grid_search.py $N 
+python grid_search.py $N $max
