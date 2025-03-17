@@ -59,9 +59,10 @@ for i in range(1, max):
             # plot order parameter and average nearest neighbour distance
             plt.figure()
             plt.plot(data['order_parameter'], label='O')
-            plt.plot(data['dist_mean'], label='E[dist]')
+            plt.plot(data['dist_mean'], label=r'$\mathbb{E}[d_{NN}]$')
             plt.fill_between(std_range_down, std_range_up, alpha=0.2)
             plt.xlabel('time')
+            plt.yticks([])
             if data['N'] == 1:
                 plt.suptitle('Converged at ' + data['converged'])
 
