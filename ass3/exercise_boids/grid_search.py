@@ -10,11 +10,14 @@ inner = int(sys.argv[3])
 outer = int(sys.argv[4])
 
 
-sim_folder = os.path.join(os.path.curdir, f'sim{N}_{max}_{inner}_{outer}/')
-os.makedirs(sim_folder)
+sim_folder = os.path.join(f'sim{N}_{max}_{inner}_{outer}/')
+if not os.path.exists(sim_folder):
+    os.makedirs(sim_folder)
 
-def read_output_files(sim_id):
-    with open('boids_output/'+sim_id+'.json') as f:
+def read_output_files(N, max, inner, outer, c, s, a):
+    sim_folder = os.path.join('boids_output/' + f'output_{N}_{max}_{inner}_{outer}/')
+    sim_id = f'output_{c}_{s}_{a}'
+    with open(sim_folder+sim_id+'.json') as f:
         data = json.load(f)
         # extract order parameter
     return data
@@ -44,27 +47,29 @@ iter_conv = np.zeros((max, max, max))
 for i in range(1, max):
     for j in range(1, max):
         for k in range(1, max):
-            sim_id = 'output_'+str(N)+'_'+str(i)+'_'+str(j)+'_'+str(k)
-            data = read_output_files(sim_id)
-
+            data = read_output_files(N, max, inner, outer, i, j, k)
+            sim_id = f'plot_{i}_{j}_{k}'
             if data == None:
                 continue
-
+            std_range_up = []
+            std_range_down = []
+            for i in data['dist_mean']:
+                std_range_up.append(i + data['dist_var'][0])
+                std_range_down.append(i - data['dist_var'][0])
             # plot order parameter and average nearest neighbour distance
             plt.figure()
             plt.plot(data['order_parameter'], label='O')
             plt.plot(data['dist_mean'], label='E[dist]')
-            plt.plot(data['dist_var'], label='Std Dev')
-            # plt.fill_between(data['dist_mean'] - data['dist_var'], data['dist_mean'] + data['dist_var'], alpha=0.2)
+            plt.fill_between(std_range_down, std_range_up, alpha=0.2)
             plt.xlabel('time')
             if data['N'] == 1:
                 plt.suptitle('Converged at ' + data['converged'])
 
             else:
                 plt.suptitle('Stopped at ' + str(data['N']) + ' boids')
-            plt.title('N='+str(N)+', c='+str(np.floor(i/max))+', s='+str(np.floor(j/max))+', a='+str(np.floor(k/max)))
+            plt.title('N='+str(N)+', c='+str(np.round((i/max), 2))+', s='+str(np.round((j/max), 2))+', a='+str(np.round((k/max), 2)))
             plt.legend()
-            plt.savefig(sim_folder+sim_id+'.png')
+            plt.savefig(sim_folder + '/' +sim_id+'.png')
             plt.close()
 
             # save N and max iter to array
@@ -74,10 +79,10 @@ for i in range(1, max):
 
 
 fig1 = plot_grid_search(N_fin, 'Number of boids at convergence', max)
-fig1.savefig(sim_folder + 'N_fin.png')
+fig1.savefig(sim_folder + '/' + 'N_fin.png')
 
 
 fig2 = plot_grid_search(iter_conv, 'Number of iterations at convergence', max)
-fig2.savefig(sim_folder + 'iter_conv.png')
+fig2.savefig(sim_folder + '/' + 'iter_conv.png')
 
 

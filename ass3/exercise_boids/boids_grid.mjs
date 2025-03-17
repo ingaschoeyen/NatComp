@@ -10,9 +10,14 @@ if (!fs.existsSync(outputDir)) {
 }
 
 // Example function to save data to a JSON file
-function saveDataToFile(N, cohesion, separation, alignment, data) {
-    const filename = `output_${N}_${cohesion}_${separation}_${alignment}.json`;
-    const filePath = path.join(outputDir, filename);
+function saveDataToFile(N, max, cohesion, separation, alignment, inner, outer, data) {
+    const filename = `output_${cohesion}_${separation}_${alignment}.json`;
+	const foldername = `output_${N}_${max}_${inner}_${outer}`
+	const folderDir = path.join(outputDir, foldername)
+	if (!fs.existsSync(folderDir)) {
+		fs.mkdirSync(folderDir, { recursive: true });
+	}
+    const filePath = path.join(folderDir, filename);
 
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -493,5 +498,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         "converged": conv_iter,
         "N": N_fin
     }
-	saveDataToFile(N, i, j, k, output)
+	saveDataToFile(N, max, i, j, k, inner, outer, output)
 }
