@@ -469,13 +469,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     let j = process.argv[4]
     let k = process.argv[5]
 	let max = process.argv[6]
+	let inner = process.argv[7]
+	let outer = process.argv[8]
 	let config = {	
 		w : 400,
 		h : 400,
 		N  : N,
 		zoom : 1,
-		innerRadius : 10,
-		outerRadius : 25,
+		innerRadius : inner,
+		outerRadius : outer,
 		cohesion : i/max,
 		separation : j/max,
 		alignment : k/max
