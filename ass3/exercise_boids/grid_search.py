@@ -6,7 +6,7 @@ import json
 # load the output files from boids_out folder and read them 
 
 def read_output_files(sim_id):
-    with open('boids_out/'+sim_id+'.json') as f:
+    with open('boids_output/'+sim_id+'.json') as f:
         data = json.load(f)
         # extract order parameter
     return data
@@ -19,10 +19,10 @@ max = int(sys.argv[2])
 N_fin = np.array((max, max, max))
 iter_conv = np.array((max, max, max))
 
-for i in range(max):
-    for j in range(max):
-        for k in range(max):
-            sim_id = 'boids'+str(N)+'_'+str(i)+'_'+str(j)+'_'+str(k)
+for i in range(1, max):
+    for j in range(1, max):
+        for k in range(1, max):
+            sim_id = 'output_'+str(N)+'_'+str(i)+'_'+str(j)+'_'+str(k)
             data = read_output_files(sim_id)
 
             if data == None:
@@ -30,18 +30,19 @@ for i in range(max):
 
             # plot order parameter and average nearest neighbour distance
             fig = plt.figure()
-            fig.plot(len(data['order_parameter']), data['order_parameter'], label='Order parameter')
-            fig.plot(len(data['dist_mean']), data['dist_mean'], label='Average Nearest Neighbour Distance')
-            plt.fill_between(len(data['dist_mean']), data['dist_mean'] - data['dist_var'], data['dist_mean'] + data['dist_var'], alpha=0.2)
-            fig.xlabel('time')
+            plt.plot(data['order_parameter'], label='Order parameter')
+            plt.plot(data['dist_mean'], label='Average Nearest Neighbour Distance')
+            plt.plot(data['dist_var'], label='Standard Deviation')
+            # plt.fill_between(data['dist_mean'] - data['dist_var'], data['dist_mean'] + data['dist_var'], alpha=0.2)
+            plt.xlabel('time')
             if data['N'] == 1:
-                fig.suptitle('Converged at ' + data['converged'])
+                plt.suptitle('Converged at ' + data['converged'])
 
             else:
-                fig.suptitle('Stopped at ' + str(data['N']) + ' boids')
-            fig.title('N='+str(N)+', c='+str(np.floor(i/max))+', s='+str(np.floor(j/max))+', a='+str(np.floor(k/max)))
+                plt.suptitle('Stopped at ' + str(data['N']) + ' boids')
+            plt.title('N='+str(N)+', c='+str(np.floor(i/max))+', s='+str(np.floor(j/max))+', a='+str(np.floor(k/max)))
             fig.savefig('plots/'+sim_id+'.png')
-            fig.close()
+            plt.close()
 
             # save N and max iter to array
             N_fin[i,j,k] = data['N']

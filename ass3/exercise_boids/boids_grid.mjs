@@ -476,9 +476,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 		zoom : 1,
 		innerRadius : 10,
 		outerRadius : 25,
-		cohesion : max/i,
-		separation : max/j,
-		alignment : max/k
+		cohesion : i/max,
+		separation : j/max,
+		alignment : k/max
 	}
 	let conf = config	
 	let [order, dist_mean, dist_var, conv_iter, N_fin] = simulate();
