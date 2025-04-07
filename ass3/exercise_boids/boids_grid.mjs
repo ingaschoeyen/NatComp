@@ -413,7 +413,7 @@ function initialize(){
 	
 }
 
-function simulate(max_iter = 5000){
+function simulate(max_iter = 1000){
 	let order = []
     let dist_mean= []
 	let dist_var = []
@@ -454,6 +454,8 @@ function simulate(max_iter = 5000){
 		if (S.swarm.length == 1){
 			console.log("Converged at "  + i + " iterations")
             iter_conv = i
+			// remove NaNs from S.getAngles() then take lenght
+			let N_fin = S.getAngles().reduce(x => x != NaN).length
 			return [order, dist_mean, dist_var, iter_conv, S.getAngles().length]
 		}
         else if(i == max_iter-1){
@@ -469,7 +471,7 @@ function simulate(max_iter = 5000){
 
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    let N = process.argv[2]
+    let Nb = process.argv[2]
     let i = process.argv[3]
     let j = process.argv[4]
     let k = process.argv[5]
@@ -479,7 +481,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 	let config = {	
 		w : 400,
 		h : 400,
-		N  : N,
+		N  : Nb,
 		zoom : 1,
 		innerRadius : inner,
 		outerRadius : outer,
@@ -498,5 +500,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         "converged": conv_iter,
         "N": N_fin
     }
-	saveDataToFile(N, max, i, j, k, inner, outer, output)
+	saveDataToFile(Nb, max, i, j, k, inner, outer, output)
 }
