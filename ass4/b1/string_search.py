@@ -7,13 +7,13 @@ from matplotlib import pyplot as plt
 K = 2 # Number of candidates to sample at random for the tournament selection
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ "
 GOAL_STRING = "Bonjour bitches"
-CROSS_P : float = 1 # Probability of a crossover
+CROSS_P : float = 1. # [0, 1] Probability of a crossover
 LENGTH = len(GOAL_STRING)
-MUT_RATE : float = 1/LENGTH # Rate of mutation for children
+MUT_RATE : float = 1/LENGTH # [0, 1] Rate of mutation for children
 N = 200 # Population size
 MAX_GENS = 100 # Maximum number of generations of one run
 REPETITIONS = 10 # Number of runs
-DIV_SUBSAMPLE_Q = 0.5 # Fraction of population to use to calculate diversity, lower to speed up
+DIV_SUBSAMPLE_Q = 0.6 # [0, 1] Fraction of population to use to calculate diversity, lower to speed up
 
 
 # Fraction of correct characters
@@ -189,6 +189,10 @@ def plot_generations(generations : list[int], output_path : str,
     ax = plt.gca()
     ax.set_xlim([0, max_gens + 1])
     # ax.set_ylim([0, len(generations)])
+    plt.locator_params(axis="both", integer=True, tight=True) # display only whole numbers on Y
+    plt.xlabel("Generations")
+    plt.ylabel("Amount of runs")
+    plt.title("Last generation histogram")
 
     plt.savefig(output_path)
 
