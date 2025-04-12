@@ -9,7 +9,7 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ "
 GOAL_STRING = "Bonjour bitches"
 CROSS_P : float = 1. # [0, 1] Probability of a crossover
 LENGTH = len(GOAL_STRING)
-MUT_RATE : float = 1/LENGTH # [0, 1] Rate of mutation for children
+MUT_RATE : float = 3/LENGTH # [0, 1] Rate of mutation for children
 N = 200 # Population size
 MAX_GENS = 100 # Maximum number of generations of one run
 REPETITIONS = 10 # Number of runs
@@ -176,7 +176,7 @@ def plot_diversity(results : list[list[float]], output_path : str,
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
     # place a text box in lower right in axes coords
-    ax.text(0.55, 0.98, textstr, transform=ax.transAxes, fontsize=14,
+    ax.text(0.55, 0.30, textstr, transform=ax.transAxes, fontsize=14,
             verticalalignment='top', bbox=props)
 
     plt.savefig(output_path)
