@@ -5,6 +5,7 @@ import random
 import sys
 import numpy as np
 import itertools
+import os
 
 # sys arg structure
 # python EA.py <dataset_file_name> <population_size> <mutation_rate> <crossover_rate> <generations>
@@ -13,7 +14,7 @@ import itertools
 class EA:
 
 
-    def __init__(self, cities, permutations, population_size=100, mutation_rate=0.01, crossover_rate=0.7,tournament_size=5, elitism = 10, generations=1000, horizon=15):
+    def __init__(self, cities, permutations, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=1000, horizon=15):
         self.cities = cities # list of coordinates of cities [N x 2]
         self.n = len(cities)
         self.population_size = population_size
@@ -109,7 +110,10 @@ class EA:
 
 
     def tournament_selection(self):
-        tournament = random.sample(self.population, self.tournament_size)
+        try:
+            tournament = random.sample(self.population, k = self.tournament_size)
+        except ValueError:
+            print("Tournament size is larger than population size. Adjusting tournament size.")
         tournament.sort(key=lambda x: x[1])
         return tournament[0][0], tournament[0][1]
 
@@ -161,7 +165,7 @@ class EA:
             self.evaluate_population()
             print(f"Generation: {self.generation}, Best Distance: {self.best_distance}")
             self.update_population()
-            self.generation += 1            
+            self.generation += 1    
             # if self.generation > 50 and np.mean(self.best_distances[-self.conv_horiz:]) == self.best_distance:
             #     print("Converged")
             #     break
@@ -182,28 +186,50 @@ def read_dataset(file_path):
 
 def plot_results(final_dists, best_distances, mean_distances, var_distances):
     
-    # compute stddev intervals
-    std_lower = [x-y for x, y in zip(mean_distances, var_distances)]
-    std_upper = [x+y for x, y in zip(mean_distances, var_distances)]
-    
+
     # plot the best distance
-    plt.figure(figsize=(10, 6))
+    ax1 = plt.subplot(1 ,2, 1)
+    ax2 = plt.subplot(1, 2, 2)
     for i in range(len(best_distances)):
+            # compute stddev intervals
+        # std_lower = [x-y for x, y in zip(mean_distances[i], var_distances[i])]
+        std_upper = [x+y for x, y in zip(mean_distances[i], var_distances[i])]
+    
+        
         # plot the mean distance
-        plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
+        ax1.plot(mean_distances[i], label=f"Mean Distance {i+1}")
         # plot the variance distance as shaded area
-        plt.fill_between(range(len(var_distances[i])), std_lower, std_upper, alpha=0.2)
+        ax1.fill_between(range(len(var_distances[i])), mean_distances[i], std_upper, alpha=0.2)
         # plot the convergence time
-        plt.vertical_line(len(best_distances[i]), color='r', linestyle='--', label="Convergence")
-        # plot the best distance
-        plt.horizontal_line(final_dists[i], color='g', linestyle='--', label="Best Distance {i+1}")
-    plt.xlabel("Generation")
-    plt.ylabel("Distance")
-    plt.title("Best Distance vs Generation")
-    plt.legend()
+        ax2.scatter(len(best_distances[i]), final_dists[i], color='r', label=f"Run {i+1}")
+
+     # configure runs plot   
+    ax1.set_xlabel("Generation")
+    ax1.set_ylabel("Distance")
+    ax1.set_title("Best Distance vs Generation")
+    ax1.legend()
+
+    # configure convergence plot
+    ax2.set_xlabel("Convergence Time")
+    ax2.set_ylabel("Distance")
+    ax2.set_title("Convergence Time vs Distance")
+    ax2.legend()
+
+    plt.suptitle(f"N = {population_size}, mu = {mutation_rate}, pc = {crossover_rate}")
+
+
+    # make parameter directory if it does not exist
+    if not os.path.exists(os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}")):
+        os.makedirs(os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}"))
+
+    plot_path = os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}")
+
+    # make the file paths
+    fig1_path = os.path.join(plot_path, "runs_plot.png")
+    # fig2_path = os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}/convergence.png")
+    # plt.savefig(fig1_path)
     plt.show()
-    plt.savefig(f"ass4/b2/results/{dataset}_N{population_size}_mu{mutation_rate}_pc{crossover_rate}.png")
-    plt.close()
+    # fig2.savefig(fig2_path)
 
 
 
@@ -224,7 +250,8 @@ if __name__ == "__main__":
 
 
 
-    file_path = f"ass4/b2/datasets/{dataset}.txt"
+    file_loc = f"/datasets/{dataset}.txt"
+    file_path = os.path.dirname(__file__) + file_loc
     cities = read_dataset(file_path)
     # get all permutations of the cities
     # perms = itertools.permutations(range(len(cities)))
@@ -237,7 +264,7 @@ if __name__ == "__main__":
     # repeat the search 10 times
     for i in range(10):
         print(f"Starting Run {i+1} of 10")
-        ea = EA(cities, perms, population_size, mutation_rate, crossover_rate, generations)
+        ea = EA(cities, perms, population_size, mutation_rate, crossover_rate, generations=generations)
         
         # run the search, get the best route and distance
         best_route, best_distance = ea.do_an_evolution()
