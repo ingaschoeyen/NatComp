@@ -122,11 +122,10 @@ class EA:
             new_population = []
         else:
             new_population = self.population[:self.elitism]
-        for i in range(self.population_size//3):
+        for i in range(self.population_size//2):
             # select three parents for crossover + mutation
             parent1, dist1 = self.tournament_selection()
             parent2, dist2 = self.tournament_selection()
-            parent3, dist3 = self.tournament_selection()
             if random.random() < self.crossover_rate:
                 offspring1, offspring2 = self.crossover(parent1, parent2)
                 new_population.append((offspring1, self.calculate_distance(offspring1)))
@@ -135,23 +134,11 @@ class EA:
             else:
                 new_population.append((parent1, dist1))
                 new_population.append((parent2, dist2))
-            # mutate the offspring
+        # mutate the offspring
+        for k in range(self.population_size):
             if random.random() < self.mutation_rate:
-                offspring3 = self.mutate(parent3)
-                new_population.append((offspring3, self.calculate_distance(offspring3)))
-            # if mutation is not performed, add the parent to the new population
-            else:
-                new_population.append((parent3, dist3))
-            # check for duplicates and remove them
-            seen = set()
-            deduped = []
-            for ind, dist in new_population:
-                # Convert NumPy array to a hashable tuple
-                key = (tuple(ind), dist)
-                if key not in seen:
-                    seen.add(key)
-                    deduped.append((np.array(ind), dist))  # Convert back to NumPy array
-            new_population = deduped
+                offspring3 = self.mutate(new_population[k][0])
+                new_population[k] = (offspring3, self.calculate_distance(offspring3))
         # if the new population is larger than the population size, truncate it to the population size
         if len(new_population) > self.population_size:
             new_population = new_population[:self.population_size]
@@ -162,12 +149,12 @@ class EA:
     def do_an_evolution(self):
         for _ in range(self.max_generations):
             self.evaluate_population()
-            print(f"Generation: {self.generation}, Best Distance: {self.best_distance}")
+            # print(f"Generation: {self.generation}, Best Distance: {self.best_distance}")
             self.update_population()
             self.generation += 1    
-            # if self.generation > 50 and np.mean(self.best_distances[-self.conv_horiz:]) == self.best_distance:
-            #     print("Converged")
-            #     break
+            if self.generation > 50 and np.mean(self.best_distances[-self.conv_horiz:]) == self.best_distance:
+                print("Converged")
+                break
         return self.best_route, self.best_distance
     
 
@@ -181,11 +168,13 @@ def read_dataset(file_path):
         # check if 2 columns or three
         lines = f.readlines()
         if len(lines[0].split()) == 3:
-            for line in lines[1:]:
+            print("3 columns")
+            for line in lines:
                 x, y = map(float, line.strip().split()[1:])
                 cities.append((x, y))
         elif len(lines[0].split()) == 2:
-            for line in f:
+            print("2 columns")
+            for line in lines:
                 x, y = map(float, line.strip().split())
                 cities.append((x, y))
         else:
@@ -196,8 +185,7 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances):
     
 
     # plot the best distance
-    ax1 = plt.subplot(1 ,2, 1)
-    ax2 = plt.subplot(1, 2, 2)
+    plt.figure(figsize=(12, 6))
     for i in range(len(best_distances)):
             # compute stddev intervals
         # std_lower = [x-y for x, y in zip(mean_distances[i], var_distances[i])]
@@ -205,73 +193,65 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances):
     
         
         # plot the mean distance
-        ax1.plot(mean_distances[i], label=f"Mean Distance {i+1}")
+        plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
         # plot the variance distance as shaded area
-        ax1.fill_between(range(len(var_distances[i])), mean_distances[i], std_upper, alpha=0.2)
-        # plot the convergence time
-        ax2.scatter(len(best_distances[i]), final_dists[i], color='r', label=f"Run {i+1}")
-
+        plt.fill_between(range(len(var_distances[i])), mean_distances[i], std_upper, alpha=0.2)
+       
      # configure runs plot   
-    ax1.set_xlabel("Generation")
-    ax1.set_ylabel("Distance")
-    ax1.set_title("Best Distance vs Generation")
-    ax1.legend()
-
-    # configure convergence plot
-    ax2.set_xlabel("Convergence Time")
-    ax2.set_ylabel("Distance")
-    ax2.set_title("Convergence Time vs Distance")
-    ax2.legend()
-
-    plt.suptitle(f"N = {population_size}, mu = {mutation_rate}, pc = {crossover_rate}")
+    plt.xlabel("Generation")
+    plt.ylabel("Distance")
+    plt.suptitle("Best Distance vs Generation")
+    plt.legend()
+    plt.title(f"N = {population_size}, mu = {mutation_rate}, pc = {crossover_rate}")
 
 
-    # make parameter directory if it does not exist
-    if not os.path.exists(os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}")):
-        os.makedirs(os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}"))
+    fig_name = f"best_distance_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.png"
 
-    plot_path = os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}")
-
-    # make the file paths
-    fig1_path = os.path.join(plot_path, "runs_plot.png")
-    # fig2_path = os.path.join(os.getcwd(), f"/results/{dataset}/N{population_size}_mu{str(mutation_rate)}_pc{str(crossover_rate)}/convergence.png")
-    # plt.savefig(fig1_path)
+    plt.savefig(fig_name)
     plt.show()
-    # fig2.savefig(fig2_path)
 
 
-
-
-
-if __name__ == "__main__":
+def setup():
     dataset = sys.argv[1]
     if len(sys.argv) < 3:    
         population_size = 100
         mutation_rate = 0.1
         crossover_rate = 0.7
         generations = 100
+        n_runs = 10
     else:
         population_size = int(sys.argv[2])
         mutation_rate = float(sys.argv[3])
         crossover_rate = float(sys.argv[4])
         generations = int(sys.argv[5])
-
+        n_runs = int(sys.argv[6])
 
 
     file_loc = f"/datasets/{dataset}.txt"
     file_path = os.path.dirname(__file__) + file_loc
     cities = read_dataset(file_path)
-    # get all permutations of the cities
-    # perms = itertools.permutations(range(len(cities)))
+    
+    return cities, population_size, mutation_rate, crossover_rate, generations, n_runs
+
+if __name__ == "__main__":
+    
+    # setup
+    cities, population_size, mutation_rate, crossover_rate, generations, n_runs = setup()
+    
+    
+    # create a list of permutations of the cities
     perms = None
+
     final_distances = []
     best_distances = []
     mean_distances = []
     var_distances = []
-    
+
     # repeat the search 10 times
-    for i in range(10):
+    for i in range(n_runs):
         print(f"Starting Run {i+1} of 10")
+        
+        # initiate the algorithm
         ea = EA(cities, perms, population_size, mutation_rate, crossover_rate, generations=generations)
         
         # run the search, get the best route and distance
@@ -282,10 +262,12 @@ if __name__ == "__main__":
         best_distances.append(ea.best_distances)
         mean_distances.append(ea.distances_mean)
         var_distances.append(ea.distances_var)
+        
+        
         # print the best route and distance
         print(f"Run {i+1}:")
-        print(f"Best Route: {best_route}")
         print(f"Best Distance: {best_distance}")
+
 
 
     # plot the results
