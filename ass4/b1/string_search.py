@@ -2,16 +2,17 @@
 import random
 import sys
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 K = 2 # Number of candidates to sample at random for the tournament selection
-ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ "
-GOAL_STRING = "Bonjour bitches"
+ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+GOAL_STRING = "AdAstraPerAspera"
 CROSS_P : float = 1. # [0, 1] Probability of a crossover
 LENGTH = len(GOAL_STRING)
-MUT_RATE : float = 3/LENGTH # [0, 1] Rate of mutation for children
+MUT_RATE : float = 0.08 # [0, 1] Rate of mutation for children
 N = 200 # Population size
-MAX_GENS = 100 # Maximum number of generations of one run
+MAX_GENS = 200 # Maximum number of generations of one run
 REPETITIONS = 10 # Number of runs
 DIV_SUBSAMPLE_Q = 0.6 # [0, 1] Fraction of population to use to calculate diversity, lower to speed up
 
@@ -81,17 +82,17 @@ def tournament_selection(population : list[str], k : int = K):
 
 
 # Pair up and produce offspring
-def new_generation(parents: list[str]):
+def new_generation(parents: list[str], mut_rate : float = MUT_RATE):
     new_gen = []
     for i in range(0, len(parents), 2):
         child1, child2 = crossover(parents[i], parents[i+1])
-        new_gen.extend([mutate(child1), mutate(child2)])
+        new_gen.extend([mutate(child1, mut_rate=mut_rate), mutate(child2, mut_rate=mut_rate)])
     return new_gen
 
 
 # Run once with set parameters
 # Return final generation, fitnesses of best candidates, and diversity
-def repetition(max_gens : int = MAX_GENS, goal_string : str = GOAL_STRING):
+def repetition(max_gens : int = MAX_GENS, goal_string : str = GOAL_STRING, mut_rate : float = MUT_RATE):
     population = init_pool()
     # print("Initial population:\n", population)
     fitnesses = [fitness(x) for x in population]
@@ -111,16 +112,16 @@ def repetition(max_gens : int = MAX_GENS, goal_string : str = GOAL_STRING):
         # print("Best candidate:", best_sol)
 
         parents = tournament_selection(population)
-        population = new_generation(parents)
+        population = new_generation(parents, mut_rate=mut_rate)
 
         fitnesses = [fitness(x) for x in population]
         best_sol = best(population, fitnesses)
         best_fitnesses.append(fitness(best_sol))
         diversities.append(diversity(population))
 
-    print("Best in last generation:", best_sol)
-    print("Fitness:", fitness(best_sol))
-    print("Generations:", generation)
+    # print("Best in last generation:", best_sol)
+    # print("Fitness:", fitness(best_sol))
+    # print("Generations:", generation)
 
     return generation, best_fitnesses, diversities
 
@@ -146,7 +147,7 @@ def plot_fitness(results : list[list[float]], output_path : str,
     # these are matplotlib.patch.Patch properties
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
-    # place a text box in lower right in axes coords
+    # place a text box in lower right (0.55, 0.25) or upper right (0.55, 0.98) in axes coords
     ax.text(0.60, 0.25, textstr, transform=ax.transAxes, fontsize=14,
             verticalalignment='top', bbox=props)
 
@@ -175,8 +176,8 @@ def plot_diversity(results : list[list[float]], output_path : str,
     # these are matplotlib.patch.Patch properties
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
-    # place a text box in lower right in axes coords
-    ax.text(0.55, 0.30, textstr, transform=ax.transAxes, fontsize=14,
+    # place a text box in lower right (0.55, 0.30) or upper right (0.55, 0.98) in axes coords
+    ax.text(0.55, 0.98, textstr, transform=ax.transAxes, fontsize=14,
             verticalalignment='top', bbox=props)
 
     plt.savefig(output_path)
@@ -198,17 +199,37 @@ def plot_generations(generations : list[int], output_path : str,
 
 
 if __name__ == "__main__":
-    generations = []
-    results = []
-    diversities = []
-    for j in range(REPETITIONS):
-        gen, best_fits, diverse = repetition()
-        generations.append(gen)
-        results.append(best_fits)
-        diversities.append(diverse)
+    avgs = []
+    stds = []
+    for i, mut_rate in zip(range(1, 11), [i / 100 for i in range(1, 11)]): # execute with different mutation rates
+        generations = []
+        results = []
+        diversities = []
+        for j in range(REPETITIONS):
+            gen, best_fits, diverse = repetition(mut_rate=mut_rate)
+            generations.append(gen)
+            results.append(best_fits)
+            diversities.append(diverse)
 
-    print(generations)
+        print(generations)
+        print("Average of generations:", np.average(generations))
+        avgs.append(np.average(generations))
+        print("Std of generations:", np.std(generations))
+        stds.append(np.std(generations))
 
-    plot_generations(generations, "gens.png")
-    plot_fitness(results, "fitness.png")
-    plot_diversity(diversities, "diversity.png")
+        # plotting
+        # plot_generations(generations, "gens" + str(i) + ".png")
+        # plot_fitness(results, "fitness" + str(i) + ".png")
+        # plot_diversity(diversities, "diversity" + str(i) + ".png")
+
+    fig, ax = plt.subplots()
+    ax.set_xlim([0.01, 0.11])
+    ax.set_ylim([0, MAX_GENS])
+    ax.plot([i / 100 for i in range(1, 11)], avgs, label="Average")
+    ax.plot([i / 100 for i in range(1, 11)], stds, label="Deviation")
+    plt.xlabel("Mutation rate")
+    plt.ylabel("Generations")
+    plt.title("Effect of the mutation rate for K=2")
+    ax.legend(fontsize=14)
+    plt.savefig("mueffect.png")
+
