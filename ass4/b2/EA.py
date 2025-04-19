@@ -1,10 +1,9 @@
-# 
+# EA.py
 
 import matplotlib.pyplot as plt
 import random
 import sys
 import numpy as np
-import itertools
 import os
 
 # sys arg structure
@@ -179,9 +178,18 @@ def read_dataset(file_path):
     cities = []
     # read the file and extract the coordinates of the cities
     with open(file_path, 'r') as f:
-        for line in f:
-            x, y = map(float, line.strip().split())
-            cities.append((x, y))
+        # check if 2 columns or three
+        lines = f.readlines()
+        if len(lines[0].split()) == 3:
+            for line in lines[1:]:
+                x, y = map(float, line.strip().split()[1:])
+                cities.append((x, y))
+        elif len(lines[0].split()) == 2:
+            for line in f:
+                x, y = map(float, line.strip().split())
+                cities.append((x, y))
+        else:
+            raise ValueError("Invalid file format. Please check the dataset file. Expected 2 or 3 columns.")
     return cities
 
 def plot_results(final_dists, best_distances, mean_distances, var_distances):
