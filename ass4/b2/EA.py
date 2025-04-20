@@ -5,7 +5,7 @@ import random
 import sys
 import numpy as np
 import os
-
+import time
 # sys arg structure
 # python EA.py <dataset_file_name> <population_size> <mutation_rate> <crossover_rate> <generations>
 
@@ -246,16 +246,20 @@ if __name__ == "__main__":
     best_distances = []
     mean_distances = []
     var_distances = []
-
+    times = []
     # repeat the search 10 times
     for i in range(n_runs):
         print(f"Starting Run {i+1} of 10")
-        
+        time_init = time.time()
         # initiate the algorithm
         ea = EA(cities, perms, population_size, mutation_rate, crossover_rate, generations=generations)
         
         # run the search, get the best route and distance
         best_route, best_distance = ea.do_an_evolution()
+
+        time_end = time.time()
+        times.append(time_end - time_init)
+        print(f"Time taken: {time_end - time_init} seconds")
 
         # save the results for plotting
         final_distances.append(best_distance)
@@ -269,6 +273,18 @@ if __name__ == "__main__":
         print(f"Best Distance: {best_distance}")
 
 
+
+    # return the best distance, mean distance and variance, mean convergence time and variance,
+    #  cpu time and memroy usage as dictionary
+    results = {
+        "final_distances": final_distances,
+        "mean_distances": np.mean(final_distances),
+        "var_distances": np.var(final_distances),
+        "mean_convergence_time": np.mean(len(best_distances), axis=1),
+        "cpu_time": np.mean(times),
+    }
+
+    sys.argv[-1] = results
 
     # plot the results
     plot_results(final_distances, best_distances, mean_distances, var_distances)
