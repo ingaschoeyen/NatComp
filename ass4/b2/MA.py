@@ -34,7 +34,6 @@ class MA(EA):
                             improved = False
                     its += 1
     
-
     def diff_distance(self, route, i, j):
         """
         This function calculates the difference in distance between two routes.
@@ -46,11 +45,17 @@ class MA(EA):
         # that are switched
         # dist 1 = norm(diff(i, i-1)) + norm(diff(j, j-1))
         # dist 2 = norm(diff(i-1, j-1)) + norm(diff(i, j))
+        # delta_dist = dist2 - dist1
 
-        # delta_dist = dist_2 - dist_1
-        dist = np.linalg.norm(self.cities[route[i]], self.cities[route[i-1]]) + np.linalg.norm(self.cities[route[j]], self.cities[route[j-1]]) - np.linalg.norm(self.cities[route[i]], self.cities[route[j]]) - np.linalg.norm(self.cities[route[i-1]], self.cities[route[j-1]])
 
-        return dist
+        def dist(city1, city2):
+            return np.linalg.norm(np.array(city1) - np.array(city2))
+
+        dist1 = dist(self.cities[route[i]], self.cities[route[i-1]]) + dist(self.cities[route[j%len(route)]], self.cities[route[j-1]])
+        dist2 = dist(self.cities[route[i-1]], self.cities[route[j-1]]) + dist(self.cities[route[i]], self.cities[route[j%len(route)]])
+        delta_dist = dist2 - dist1
+  
+        return delta_dist
 
 
     def quick_local_search(self):
