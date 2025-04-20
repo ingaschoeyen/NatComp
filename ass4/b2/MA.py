@@ -3,7 +3,7 @@ from EA import EA, read_dataset, plot_results, setup
 import os
 import sys
 import numpy as np
-
+import time
 class MA(EA):
     """
     This class implements the MA (Memetic Algorithm) algorithm.
@@ -40,14 +40,8 @@ class MA(EA):
         This function calculates the difference in distance between two routes.
         It uses the 2-opt algorithm to calculate the distance.
         """
-        swapping = route[i:j]
-        dist1 = 0
-        dist2 = 0
-        for k in range(len(swapping) - 1):
-            dist1 += np.linalg.norm(np.array(self.cities[swapping[k]]) - np.array(self.cities[swapping[k + 1]]))
-            dist2 += np.linalg.norm(np.array(self.cities[swapping[-k]]) - np.array(self.cities[swapping[-1]]))
-
-        dist = dist1 - dist2
+        dist = - np.linalg.norm(np.array(self.cities[route[i]]) - np.array(self.cities[route[i + 1]])) - np.linalg.norm(np.array(self.cities[route[j]]) - np.array(self.cities[route[j+1]])) + np.linalg.norm(np.array(self.cities[route[i+1]]) - np.array(self.cities[route[j+1]])) + np.linalg.norm(np.array(self.cities[route[i]]) - np.array(self.cities[route[j]]))
+        print(f"Diff Distance: {dist}")
         return dist
 
 
@@ -94,12 +88,18 @@ if __name__ == "__main__":
     cities, population_size, mutation_rate, crossover_rate, generations, n_runs = setup()
     permutations = None
 
-    final_distances, best_distances, mean_distances, var_distances = [], [], [], []
+    final_distances, best_distances, mean_distances, var_distances, cpu_times = [], [], [], [], []
 
     for i in range(n_runs):
         print(f"Starting Run {i+1}...")
+        time_init = time.time()
         ma = MA(cities, permutations, population_size, mutation_rate, crossover_rate, generations)
         best_route, best_distance = ma.do_a_memetic()
+        
+        time_end = time.time()  
+        cpu_times.append(time_end - time_init)
+        print(f"Run {i+1} Time: {cpu_times[-1]} seconds")
+        
         final_distances.append(best_distance)
         best_distances.append(ma.best_distance)
         mean_distances.append(np.mean(ma.distances_mean))

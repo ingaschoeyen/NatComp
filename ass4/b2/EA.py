@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import os
 import time
+import json
 # sys arg structure
 # python EA.py <dataset_file_name> <population_size> <mutation_rate> <crossover_rate> <generations>
 
@@ -181,7 +182,7 @@ def read_dataset(file_path):
             raise ValueError("Invalid file format. Please check the dataset file. Expected 2 or 3 columns.")
     return cities
 
-def plot_results(final_dists, best_distances, mean_distances, var_distances):
+def plot_results(final_dists, best_distances, mean_distances, var_distances, algo_type="EA"):
     
 
     # plot the best distance
@@ -189,7 +190,7 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances):
     for i in range(len(best_distances)):
             # compute stddev intervals
         # std_lower = [x-y for x, y in zip(mean_distances[i], var_distances[i])]
-        std_upper = [x+y for x, y in zip(mean_distances[i], var_distances[i])]
+        std_upper = [x+np.sqrt(y) for x, y in zip(mean_distances[i], var_distances[i])]
     
         
         # plot the mean distance
@@ -204,8 +205,8 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances):
     plt.legend()
     plt.title(f"N = {population_size}, mu = {mutation_rate}, pc = {crossover_rate}")
 
-
-    fig_name = f"best_distance_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.png"
+    dataset = sys.argv[1]
+    fig_name = f"best_distance_{algo_type}_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.png"
 
     plt.savefig(fig_name)
     plt.show()
@@ -280,11 +281,17 @@ if __name__ == "__main__":
         "final_distances": final_distances,
         "mean_distances": np.mean(final_distances),
         "var_distances": np.var(final_distances),
-        "mean_convergence_time": np.mean(len(best_distances), axis=1),
+        "mean_convergence_time": np.mean(len(best_distances)),
         "cpu_time": np.mean(times),
     }
 
-    sys.argv[-1] = results
+    # write results to file
+    dataset = sys.argv[1]
+    with open(f"results_EA_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.json", "w") as f:
+        # write the results in json format
+        json.dump(results, f, indent=4)
+    print(f"Results saved to results_EA_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.json")
+
 
     # plot the results
     plot_results(final_distances, best_distances, mean_distances, var_distances)
