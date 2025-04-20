@@ -34,6 +34,45 @@ class MA(EA):
                             improved = False
                     its += 1
     
+
+    def diff_distance(self, route, i, j):
+        """
+        This function calculates the difference in distance between two routes.
+        It uses the 2-opt algorithm to calculate the distance.
+        """
+        swapping = route[i:j]
+        dist1 = 0
+        dist2 = 0
+        for k in range(len(swapping) - 1):
+            dist1 += np.linalg.norm(np.array(self.cities[swapping[k]]) - np.array(self.cities[swapping[k + 1]]))
+            dist2 += np.linalg.norm(np.array(self.cities[swapping[-k]]) - np.array(self.cities[swapping[-1]]))
+
+        dist = dist1 - dist2
+        return dist
+
+
+    def quick_local_search(self):
+        """
+        This function implements a quick local search algorithm.
+        It uses a 2-opt algorithm to improve the route.
+        """
+        for n, instance in enumerate(self.population):
+            route = instance[0]
+            best_distance = instance[1]
+            improved = True
+            its = 0
+            # greedy algo, so breaks on first improvement - while bc of double loop
+            while improved:
+                for i in range(len(route) - 1):
+                    for j in range(i + 1, len(route)):
+                        delta_dist = self.diff_distance(route, i, j)
+                        if delta_dist < 0:
+                            new_route = route[:]
+                            new_route[i:j] = list(reversed(new_route[i:j]))[:]
+                            new_distance = best_distance + delta_dist
+                            self.population[n] = (new_route, new_distance)
+                            improved = False
+
     def do_a_memetic(self):
         """
         This function implements the memetic algorithm.
@@ -41,7 +80,7 @@ class MA(EA):
         """
 
         for _ in range(self.max_generations):
-            self.local_search()
+            self.quick_local_search()
             self.evaluate_population()
             self.update_population()
             self.generation += 1
