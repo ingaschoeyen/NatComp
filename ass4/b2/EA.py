@@ -195,16 +195,16 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
         
         # plot the mean distance
         plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
-        plt.plot(best_distances[i], label=f"Best Distance {i+1}")
+        # plt.plot(best_distances[i], label=f"Best Distance {i+1}")
         # plot the variance distance as shaded area
-        plt.fill_between(range(len(var_distances[i])), mean_distances[i], std_upper, alpha=0.2)
+        plt.fill_between(range(len(var_distances[i])), best_distances[i], std_upper, alpha=0.2)
        
      # configure runs plot   
     plt.xlabel("Generation")
     plt.ylabel("Distance")
     plt.suptitle("Best Distance vs Generation")
     plt.legend()
-    plt.title(f"N = {population_size}, mu = {mutation_rate}, pc = {crossover_rate}")
+    plt.title(fr"N = {population_size}, $\mu$ = {mutation_rate}, $p_c$ = {crossover_rate}")
 
     dataset = sys.argv[1]
     fig_name = f"best_distance_{algo_type}_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.png"
@@ -215,6 +215,7 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
 
 def setup():
     dataset = sys.argv[1]
+    global population_size, mutation_rate, crossover_rate, generations, n_runs
     if len(sys.argv) < 3:    
         population_size = 100
         mutation_rate = 0.1

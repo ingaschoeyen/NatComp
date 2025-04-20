@@ -9,10 +9,10 @@ class MA(EA):
     This class implements the MA (Memetic Algorithm) algorithm.
     """
 
-    def __init__(self, cities, permutations, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=1000, horizon=15):
+    def __init__(self, cities, permutations, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=100, horizon=15):
         super().__init__(cities, permutations, population_size, mutation_rate, crossover_rate, tournament_size, elitism, generations)
 
-    def local_search(self):
+    # def local_search(self):
         """
         This function implements a local search algorithm.
         It uses a 2-opt algorithm to improve the route.
@@ -65,9 +65,7 @@ class MA(EA):
         """
         for n, instance in enumerate(self.population):
             route = instance[0]
-            best_distance = instance[1]
             improved = False
-            its = 0
             # greedy algo, so breaks on first improvement - while bc of double loop
             while not improved:
                 for i in range(len(route) - 1):
@@ -83,6 +81,10 @@ class MA(EA):
                     if improved:
                         break
 
+            if improved:
+                break
+
+
 
     def do_a_memetic(self):
         """
@@ -95,8 +97,11 @@ class MA(EA):
             self.evaluate_population()
             self.update_population()
             self.generation += 1
-            print(f"Generation {self.generation}: Best Distance: {self.best_distance}")
-
+            if self.generation % 10 == 0:
+                print(f"Generation {self.generation}: Best Distance: {self.best_distance}")
+            if np.mean(self.best_distances) == self.best_distance:
+                print(f"Stopping criteria met at generation {self.generation}")
+                break
 
         return self.best_route, self.best_distance
 
@@ -110,7 +115,7 @@ if __name__ == "__main__":
     for i in range(n_runs):
         print(f"Starting Run {i+1}...")
         time_init = time.time()
-        ma = MA(cities, permutations, population_size, mutation_rate, crossover_rate, generations)
+        ma = MA(cities, permutations, population_size, mutation_rate, crossover_rate, generations=generations)
         best_route, best_distance = ma.do_a_memetic()
         
         time_end = time.time()  
@@ -119,8 +124,8 @@ if __name__ == "__main__":
         
         final_distances.append(best_distance)
         best_distances.append(ma.best_distance)
-        mean_distances.append(np.mean(ma.distances_mean))
-        var_distances.append(np.var(ma.distances_var))
+        mean_distances.append(ma.distances_mean)
+        var_distances.append(ma.distances_var)
 
         print(f"Best Distance Run {i+1}: {best_distance}")
 
