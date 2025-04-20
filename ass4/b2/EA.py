@@ -195,6 +195,7 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
         
         # plot the mean distance
         plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
+        plt.plot(best_distances[i], label=f"Best Distance {i+1}")
         # plot the variance distance as shaded area
         plt.fill_between(range(len(var_distances[i])), mean_distances[i], std_upper, alpha=0.2)
        

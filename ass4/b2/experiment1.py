@@ -88,8 +88,26 @@ if __name__ == "__main__":
         var_distances_ma.append(np.var(ma.distances_var))   
 
     
-    # get averages of runs and variance
+    # return the best distance, mean distance and variance, mean convergence time and variance,
+    #  cpu time and memroy usage as dictionary
+    results_ea = {
+        "final_distances": final_distances_ea,
+        "mean_distances": np.mean(final_distances_ea),
+        "var_distances": np.var(final_distances_ea),
+        "mean_convergence_time": np.mean(len(best_distances_ea)),
+        "cpu_time": np.mean(cpu_times_ea),
+    }
+
+    results_ma = {
+        "final_distances": final_distances_ma,
+        "mean_distances": np.mean(final_distances_ma),
+        "var_distances": np.var(final_distances_ma),
+        "mean_convergence_time": np.mean(len(best_distances_ma)),
+        "cpu_time": np.mean(cpu_times_ma),
+    }
+
+
 
 
     # plot results
-    plot_comparison()
+    plot_comparison(results_ma, results_ea)

@@ -40,8 +40,16 @@ class MA(EA):
         This function calculates the difference in distance between two routes.
         It uses the 2-opt algorithm to calculate the distance.
         """
-        dist = - np.linalg.norm(np.array(self.cities[route[i]]) - np.array(self.cities[route[i + 1]])) - np.linalg.norm(np.array(self.cities[route[j]]) - np.array(self.cities[route[j+1]])) + np.linalg.norm(np.array(self.cities[route[i+1]]) - np.array(self.cities[route[j+1]])) + np.linalg.norm(np.array(self.cities[route[i]]) - np.array(self.cities[route[j]]))
-        print(f"Diff Distance: {dist}")
+        # calculate the difference between the two segments that are switched
+        # in the route
+        # i and j are the indices of the two segments
+        # that are switched
+        # dist 1 = norm(diff(i, i-1)) + norm(diff(j, j-1))
+        # dist 2 = norm(diff(i-1, j-1)) + norm(diff(i, j))
+
+        # delta_dist = dist_2 - dist_1
+        dist = np.linalg.norm(self.cities[route[i]], self.cities[route[i-1]]) + np.linalg.norm(self.cities[route[j]], self.cities[route[j-1]]) - np.linalg.norm(self.cities[route[i]], self.cities[route[j]]) - np.linalg.norm(self.cities[route[i-1]], self.cities[route[j-1]])
+
         return dist
 
 
@@ -53,19 +61,23 @@ class MA(EA):
         for n, instance in enumerate(self.population):
             route = instance[0]
             best_distance = instance[1]
-            improved = True
+            improved = False
             its = 0
             # greedy algo, so breaks on first improvement - while bc of double loop
-            while improved:
+            while not improved:
                 for i in range(len(route) - 1):
                     for j in range(i + 1, len(route)):
                         delta_dist = self.diff_distance(route, i, j)
                         if delta_dist < 0:
                             new_route = route[:]
                             new_route[i:j] = list(reversed(new_route[i:j]))[:]
-                            new_distance = best_distance + delta_dist
+                            new_distance = self.calculate_distance(new_route)
                             self.population[n] = (new_route, new_distance)
-                            improved = False
+                            improved = True
+                            break
+                    if improved:
+                        break
+
 
     def do_a_memetic(self):
         """
