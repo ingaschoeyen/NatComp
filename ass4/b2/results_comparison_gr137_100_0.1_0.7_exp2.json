@@ -1,0 +1,16 @@
+{
+    "EA": {
+        "mean_final_distance": 4489.880093432754,
+        "var_final_distance": 441758.5494400003,
+        "mean_cpu_time": 18.635150337219237,
+        "var_cpu_time": 76.29219648087195,
+        "convergence_time": 810.2
+    },
+    "MA": {
+        "mean_final_distance": 4994.51518339488,
+        "var_final_distance": 98676.04672119678,
+        "mean_cpu_time": 31.3199022769928,
+        "var_cpu_time": 0.21952850411311378,
+        "convergence_time": 86.4
+    }
+}

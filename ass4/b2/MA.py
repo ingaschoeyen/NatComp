@@ -3,6 +3,7 @@ from EA import EA, read_dataset, plot_results, setup
 import os
 import sys
 import numpy as np
+import json
 import time
 class MA(EA):
     """
@@ -88,7 +89,7 @@ class MA(EA):
 
 
 
-    def do_a_memetic(self):
+    def do_a_memetic(self, early_stopping=False):
         """
         This function implements the memetic algorithm.
         It uses a local search to improve the solutions.
@@ -105,6 +106,10 @@ class MA(EA):
                 print(f"Stopping criteria met at generation {self.generation}")
                 break
 
+            if early_stopping and self.best_distance < 0.5*self.init_distance:
+                print(f"Stopping criteria met at generation {self.generation}")
+                break
+
         return self.best_route, self.best_distance
 
 
@@ -117,7 +122,7 @@ if __name__ == "__main__":
         print(f"Starting Run {i+1}...")
         time_init = time.time()
         ma = MA(distance_matrix, population_size, mutation_rate, crossover_rate, generations=generations)
-        best_route, best_distance = ma.do_a_memetic()
+        best_route, best_distance = ma.do_a_memetic(early_stopping=True)
         
         time_end = time.time()  
         cpu_times.append(time_end - time_init)
@@ -130,5 +135,24 @@ if __name__ == "__main__":
 
         print(f"Best Distance Run {i+1}: {best_distance}")
 
+            # return the best distance, mean distance and variance, mean convergence time and variance,
 
-    plot_results(final_distances, best_distances, mean_distances, var_distances, algo_type="MA")
+
+    results = {
+        "final_distances": final_distances,
+        "mean_distances": np.mean(final_distances),
+        "var_distances": np.var(final_distances),
+        "mean_convergence_time": np.mean(len(best_distances)),
+        "cpu_time": np.mean(cpu_times),
+    }
+
+    # write results to file
+    dataset = sys.argv[1]
+    with open(f"results_MA_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.json", "w") as f:
+        # write the results in json format
+        json.dump(results, f, indent=4)
+    print(f"Results saved to results_MA_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}_early_Stopping.json")
+
+
+
+    plot_results(best_distances, mean_distances, var_distances, algo_type="MA")

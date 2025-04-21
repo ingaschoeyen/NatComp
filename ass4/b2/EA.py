@@ -14,7 +14,7 @@ import json
 class EA:
 
 
-    def __init__(self, distance_matrix, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=1000, horizon=15):
+    def __init__(self, distance_matrix, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=100, horizon=15):
         self.n = distance_matrix.shape[0] # number of cities
         self.distance_matrix = distance_matrix
         self.population_size = population_size
@@ -25,6 +25,7 @@ class EA:
         self.max_generations = generations
         self.conv_horiz = horizon # number of generations to check for convergence
         self.population = self.create_population() # list of tuples (route, distance)
+        self.init_distance = np.mean([d[1] for d in self.population])
         self.best_route = None
         self.best_distance = float('inf')
         self.best_distances = [] # to track best distance
@@ -145,14 +146,20 @@ class EA:
 
 
 
-    def do_an_evolution(self):
+    def do_an_evolution(self, early_stopping=False):
         for _ in range(self.max_generations):
             self.evaluate_population()
             # print(f"Generation: {self.generation}, Best Distance: {self.best_distance}")
             self.update_population()
             self.generation += 1    
-            if self.generation > 50 and np.mean(self.best_distances[-self.conv_horiz:]) == self.best_distance:
-                print("Converged")
+            # if self.generation > 50 and np.mean(self.best_distances[-self.conv_horiz:]) == self.best_distance:
+            #     print("Converged")
+            #     break
+            if self.generation % 20 == 0:
+                print(f"Generation {self.generation}: Best Distance: {self.best_distance}")
+            
+            if early_stopping and self.best_distance < 0.5*self.init_distance:
+                print("Early stopping at generation {self.generation}")
                 break
         return self.best_route, self.best_distance
     
@@ -180,7 +187,7 @@ def read_dataset(file_path):
             raise ValueError("Invalid file format. Please check the dataset file. Expected 2 or 3 columns.")
     return cities
 
-def plot_results(final_dists, best_distances, mean_distances, var_distances, algo_type="EA"):
+def plot_results(best_distances, mean_distances, var_distances, algo_type="EA"):
     
 
     # plot the best distance
@@ -195,7 +202,7 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
         # plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
         plt.plot(best_distances[i], label=f"Best Distance {i+1}")
         # plot the variance distance as shaded area
-        plt.fill_between(range(len(var_distances[i])),mean_distances[i], std_upper, alpha=0.2)
+        plt.fill_between(range(len(var_distances[i])), mean_distances[i], std_upper, alpha=0.2)
        
      # configure runs plot   
     plt.xlabel("Generation")
@@ -208,7 +215,7 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
     fig_name = f"best_distance_{algo_type}_{dataset}_{population_size}_{mutation_rate}_{crossover_rate}.png"
 
     plt.savefig(fig_name)
-    plt.show()
+    # plt.show()
 
 
     
@@ -261,6 +268,7 @@ if __name__ == "__main__":
     mean_distances = []
     var_distances = []
     times = []
+    convergence_time = []   
     # repeat the search 10 times
     for i in range(n_runs):
         print(f"Starting Run {i+1} of 10")
@@ -280,7 +288,7 @@ if __name__ == "__main__":
         best_distances.append(ea.best_distances)
         mean_distances.append(ea.distances_mean)
         var_distances.append(ea.distances_var)
-        
+        convergence_time.append(ea.generation)
         
         # print the best route and distance
         print(f"Run {i+1}:")
@@ -294,7 +302,7 @@ if __name__ == "__main__":
         "final_distances": final_distances,
         "mean_distances": np.mean(final_distances),
         "var_distances": np.var(final_distances),
-        "mean_convergence_time": np.mean(len(best_distances)),
+        "mean_convergence_time": np.mean(convergence_time),
         "cpu_time": np.mean(times),
     }
 
@@ -307,5 +315,5 @@ if __name__ == "__main__":
 
 
     # plot the results
-    plot_results(final_distances, best_distances, mean_distances, var_distances)
+    plot_results(best_distances, mean_distances, var_distances)
 
