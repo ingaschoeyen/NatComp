@@ -9,8 +9,8 @@ class MA(EA):
     This class implements the MA (Memetic Algorithm) algorithm.
     """
 
-    def __init__(self, cities, permutations, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=100, horizon=15):
-        super().__init__(cities, permutations, population_size, mutation_rate, crossover_rate, tournament_size, elitism, generations)
+    def __init__(self, distance_matrix, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=100, horizon=15):
+        super().__init__(distance_matrix, population_size, mutation_rate, crossover_rate, tournament_size, elitism, generations)
 
     # def local_search(self):
         """
@@ -48,11 +48,13 @@ class MA(EA):
         # delta_dist = dist2 - dist1
 
 
-        def dist(city1, city2):
-            return np.linalg.norm(np.array(city1) - np.array(city2))
+        # def dist(city1, city2):
+        #     return np.linalg.norm(np.array(city1) - np.array(city2))
 
-        dist1 = dist(self.cities[route[i]], self.cities[route[i-1]]) + dist(self.cities[route[j%len(route)]], self.cities[route[j-1]])
-        dist2 = dist(self.cities[route[i-1]], self.cities[route[j-1]]) + dist(self.cities[route[i]], self.cities[route[j%len(route)]])
+        # dist1 = dist(self.cities[route[i]], self.cities[route[i-1]]) + dist(self.cities[route[j%len(route)]], self.cities[route[j-1]])
+        # dist2 = dist(self.cities[route[i-1]], self.cities[route[j-1]]) + dist(self.cities[route[i]], self.cities[route[j%len(route)]])
+        dist1 = self.distance_matrix[route[i], route[i-1]] + self.distance_matrix[route[j%len(route)], route[j-1]]
+        dist2 = self.distance_matrix[route[i-1], route[j-1]] + self.distance_matrix[route[i], route[j%len(route)]]
         delta_dist = dist2 - dist1
   
         return delta_dist
@@ -99,7 +101,7 @@ class MA(EA):
             self.generation += 1
             if self.generation % 10 == 0:
                 print(f"Generation {self.generation}: Best Distance: {self.best_distance}")
-            if np.mean(self.best_distances) == self.best_distance:
+            if self.generation > 50 and np.mean(self.best_distances) == self.best_distance:
                 print(f"Stopping criteria met at generation {self.generation}")
                 break
 
@@ -107,15 +109,14 @@ class MA(EA):
 
 
 if __name__ == "__main__":
-    cities, population_size, mutation_rate, crossover_rate, generations, n_runs = setup()
-    permutations = None
+    distance_matrix, population_size, mutation_rate, crossover_rate, generations, n_runs = setup()
 
     final_distances, best_distances, mean_distances, var_distances, cpu_times = [], [], [], [], []
 
     for i in range(n_runs):
         print(f"Starting Run {i+1}...")
         time_init = time.time()
-        ma = MA(cities, permutations, population_size, mutation_rate, crossover_rate, generations=generations)
+        ma = MA(distance_matrix, population_size, mutation_rate, crossover_rate, generations=generations)
         best_route, best_distance = ma.do_a_memetic()
         
         time_end = time.time()  
@@ -130,4 +131,4 @@ if __name__ == "__main__":
         print(f"Best Distance Run {i+1}: {best_distance}")
 
 
-    plot_results(final_distances, best_distances, mean_distances, var_distances)
+    plot_results(final_distances, best_distances, mean_distances, var_distances, algo_type="MA")

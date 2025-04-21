@@ -14,9 +14,9 @@ import json
 class EA:
 
 
-    def __init__(self, cities, permutations, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=1000, horizon=15):
-        self.cities = cities # list of coordinates of cities [N x 2]
-        self.n = len(cities)
+    def __init__(self, distance_matrix, population_size=100, mutation_rate=0.01, crossover_rate=0.7, tournament_size=2, elitism = 10, generations=1000, horizon=15):
+        self.n = distance_matrix.shape[0] # number of cities
+        self.distance_matrix = distance_matrix
         self.population_size = population_size
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
@@ -24,10 +24,7 @@ class EA:
         self.elitism = elitism
         self.max_generations = generations
         self.conv_horiz = horizon # number of generations to check for convergence
-        if permutations is None:
-            self.population = self.create_population2()
-        else:
-            self.population = self.create_population(permutations) # list of tuples (route, distance)
+        self.population = self.create_population() # list of tuples (route, distance)
         self.best_route = None
         self.best_distance = float('inf')
         self.best_distances = [] # to track best distance
@@ -36,16 +33,8 @@ class EA:
         self.generation = 0  
         print("Initiated")
 
-    def create_population(self, permutations):
-        population = []
-        # sample random indices from permutations
-        routes = random.sample(list(permutations), self.population_size)
-        for route in routes:
-            distance = self.calculate_distance(route)
-            population.append((route, distance))
-        return population
-    
-    def create_population2(self):
+    def create_population(self):
+        # create a random population of routes
         population = []
         for _ in range(self.population_size):
             # create a random route
@@ -54,14 +43,23 @@ class EA:
             population.append((route, distance))
         return population
     
+
+    # def calculate_distance(self, route):
+    #     distance = 0
+    #     for i in range(len(route)-1):
+    #         city1 = self.cities[route[i]]
+    #         city2 = self.cities[route[i+1]]
+    #         distance += np.linalg.norm(np.array(city1) - np.array(city2))
+    #     return distance
+    
     def calculate_distance(self, route):
+        # calculate the distance of the route using the distance matrix
         distance = 0
         for i in range(len(route)-1):
-            city1 = self.cities[route[i]]
-            city2 = self.cities[route[i+1]]
-            distance += np.linalg.norm(np.array(city1) - np.array(city2))
+            distance += self.distance_matrix[route[i], route[i+1]]
+        # add the distance from the last city to the first city
+        distance += self.distance_matrix[route[-1], route[0]]
         return distance
-    
 
     def crossover(self, parent1, parent2):
         # order crossover
@@ -194,10 +192,10 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
     
         
         # plot the mean distance
-        plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
-        # plt.plot(best_distances[i], label=f"Best Distance {i+1}")
+        # plt.plot(mean_distances[i], label=f"Mean Distance {i+1}")
+        plt.plot(best_distances[i], label=f"Best Distance {i+1}")
         # plot the variance distance as shaded area
-        plt.fill_between(range(len(var_distances[i])), best_distances[i], std_upper, alpha=0.2)
+        plt.fill_between(range(len(var_distances[i])),mean_distances[i], std_upper, alpha=0.2)
        
      # configure runs plot   
     plt.xlabel("Generation")
@@ -212,6 +210,8 @@ def plot_results(final_dists, best_distances, mean_distances, var_distances, alg
     plt.savefig(fig_name)
     plt.show()
 
+
+    
 
 def setup():
     dataset = sys.argv[1]
@@ -233,13 +233,24 @@ def setup():
     file_loc = f"/datasets/{dataset}.txt"
     file_path = os.path.dirname(__file__) + file_loc
     cities = read_dataset(file_path)
-    
-    return cities, population_size, mutation_rate, crossover_rate, generations, n_runs
+
+    def distance_matrix(cities):
+        n = len(cities)
+        matrix = np.zeros((n, n))
+        for i in range(n):
+            for j in range(i + 1, n):
+                dist = np.linalg.norm(np.array(cities[i]) - np.array(cities[j]))
+                matrix[i, j] = matrix[j, i] = dist
+        return matrix
+
+
+    distance_matrix = distance_matrix(cities)
+    return distance_matrix, population_size, mutation_rate, crossover_rate, generations, n_runs
 
 if __name__ == "__main__":
     
     # setup
-    cities, population_size, mutation_rate, crossover_rate, generations, n_runs = setup()
+    distance_matrix, population_size, mutation_rate, crossover_rate, generations, n_runs = setup()
     
     
     # create a list of permutations of the cities
@@ -255,7 +266,7 @@ if __name__ == "__main__":
         print(f"Starting Run {i+1} of 10")
         time_init = time.time()
         # initiate the algorithm
-        ea = EA(cities, perms, population_size, mutation_rate, crossover_rate, generations=generations)
+        ea = EA(distance_matrix, population_size, mutation_rate, crossover_rate, generations=generations)
         
         # run the search, get the best route and distance
         best_route, best_distance = ea.do_an_evolution()
