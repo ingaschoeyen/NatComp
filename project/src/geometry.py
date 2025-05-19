@@ -13,3 +13,17 @@ def point_distances(base_point : Point, points : list[Point], dist_metric = dist
 # Returns the index of the goal_point closest the base_point for every point in base_points
 def closest_points(base_points : list[Point], goal_points : list[Point], dist_metric = distance_euclid):
     return [np.argmin(point_distances(base_point, goal_points, dist_metric)) for base_point in base_points]
+
+def radius_furthest(base_point : list[Point], goal_points : list[Point], ratio : float, dist_metric = distance_euclid):
+    furthest_distance = max(point_distances(base_point, goal_points, dist_metric))
+    return furthest_distance * ratio
+
+def radius_closest(base_point : list[Point], goal_points : list[Point], ratio : float, dist_metric = distance_euclid):
+    closest_distance = min(point_distances(base_point, goal_points, dist_metric))
+    return closest_distance * (1 + ratio)
+
+def radius_between(base_point : list[Point], goal_points : list[Point], ratio : float, dist_metric = distance_euclid):
+    distances = point_distances(base_point, goal_points, dist_metric)
+    closest, furthest = min(distances), max(distances)
+    return closest + (furthest - closest) * ratio
+
