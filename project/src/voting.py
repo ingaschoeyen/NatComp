@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 from geometry import *
 
-# TODO Voter ight be more complex, i. e. in their strategy of how honestly they vote
+# TODO Voter might be more complex, i. e. in their strategy of how honestly they vote
 Voter = Point
 
 class Population():
@@ -28,6 +28,8 @@ class Population():
         pass
 
     # TODO Custom initial setups based on available data
+    def init_custom(self):
+        pass
 
     # TODO Update the population based on polls and/or previous results
     def update(self, polls):
@@ -61,32 +63,51 @@ def fptp(voters : Population, candidates : Population, dist_metric = distance_eu
 # Every voter can approve of (vote for) any number of candidates
 # If candidates rank is at most <threshold> % of distance between the rank of best and worst candidate, they are approved
 # (Always approves at least the best candidate)
-def approval_rel(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
+def approval_between(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
     vote_count = [0 for _ in range(candidates.size())]
     for voter in voters.popul:
-        candidate_ranks = point_distances(voter, candidates, dist_metric)
+        candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
         best_cand_dist, worst_cand_dist = min(candidate_ranks), max(candidate_ranks)
         best_worst_dist = worst_cand_dist - best_cand_dist
         for i, cand_rank in enumerate(candidate_ranks):
             if (cand_rank - best_cand_dist) / best_worst_dist <= threshold:
                 vote_count[i] += 1
 
+    return vote_count
+
 # Approval voting - relative only to worst candidate (absolute merit)
 # Every voter can approve of (vote for) any number of candidates
 # If candidate is at most <threshold> % of distance to worst candidate close to the voter, they are approved
 # (Might not approve anyone)
-def approval_abs(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
-    vote_count = [0 for _ in range(candidates.size)]
+def approval_worst(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
+    vote_count = [0 for _ in range(candidates.size())]
     for voter in voters.popul:
-        candidate_ranks = point_distances(voter, candidates, dist_metric)
+        candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
         worst_cand_dist = max(candidate_ranks)
         for i, cand_rank in enumerate(candidate_ranks):
             if (cand_rank / worst_cand_dist) <= threshold:
                 vote_count[i] += 1
 
+    return vote_count
+
+# Approval voting - relatively to best candidate
+# Every voter can approve of (vote for) any number of candidates
+# If candidate is at most (1 + <threshold>) % of distance above the candidate closest to the voter, they are approved
+def approval_best(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
+    vote_count = [0 for _ in range(candidates.size())]
+    for voter in voters.popul:
+        candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
+        best_cand_dist = min(candidate_ranks)
+        for i, cand_rank in enumerate(candidate_ranks):
+            if (cand_rank / best_cand_dist) <= 1 + threshold:
+                vote_count[i] += 1
+
+    return vote_count
+
 # TODO approval with weighted votes?
 # E. g. more votes, less weight each vote has,
 # or rank each candidate in percents how much they are approved
+# see Borda voting
 
 # TODO approval with a set amount of votes, but able to elect one candidate more than once?
 # would be the same as weighted voting with sum of weights equal to 1
@@ -129,7 +150,7 @@ def instant_runoff(voters : Population, candidates : Population, threshold : flo
 # Implemented as used in Malta parliamentary elections, but using a set threshold (instead of Droop quota)
 # TODO can also use the Droop quota as threshold, requires number of mandates to distribute
 # TODO incomplete stv - rank only a subset of candidates, lowers voting power of voters, requires threshold as in approval
-# TODO ISSUE - what is the percentage result of the candidate? The amount of the total votes (above threshold)?
+# TODO PROBLEM - what is the percentage result of the candidate? The amount of the total votes (above threshold)?
 # If so, need to keep in check how many votes were transferred
 def stv(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
     pass
