@@ -122,6 +122,7 @@ def approval_best(voters : Population, candidates : Population, threshold : floa
 # TODO might be a way to optimize this
 # TODO if there are more least favourite parties, eliminate them all
 def instant_runoff(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
+    final_results = [0 for _ in range(candidates.size())]
     candidates = candidates.copy()
     shifts = [0 for _ in range(candidates.size())]
     results = fptp(voters, candidates, dist_metric)
@@ -136,8 +137,7 @@ def instant_runoff(voters : Population, candidates : Population, threshold : flo
         worst_cand = np.argmin(results)
 
     # Map votes of non-eliminated candidates back to original indices
-    final_results = [0 for _ in range(candidates.size())]
-    for i, res in results:
+    for i, res in enumerate(results):
         final_results[i + shifts[i]] = res
 
     return final_results
@@ -155,10 +155,19 @@ def instant_runoff(voters : Population, candidates : Population, threshold : flo
 def stv(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
     pass
 
-# Softmax to create percentages from number of received votes
-def percentage_distribution(results : list[int]):
-    return scipy.softmax(results)
+def percentage(results : list[int]):
+    vote_sum = sum(results)
+    return [votes / vote_sum for votes in results]
 
 # TODO Voter satisfaction efficiency
 def vse(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
-    pass
+    perc = percentage(results)
+    satisfaction_sum = 0
+    for voter in voters.popul:
+        utilities = point_distances(voter, candidates.popul, dist_metric)
+        worst_util, best_util = max(utilities), min(utilities)
+        result_util = 0
+        for i in range(candidates.size()):
+            result_util += utilities[i] * perc[i]
+        satisfaction_sum += (worst_util - result_util) / (worst_util - best_util)
+    return satisfaction_sum / voters.size()
