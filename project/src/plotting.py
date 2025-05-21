@@ -1,3 +1,4 @@
+from typing import Optional
 import matplotlib.pyplot as plt
 from voting import *
 
@@ -19,10 +20,11 @@ def scatter_voters_cands(ax : plt.Axes, voters : Population, candidates : Popula
                alpha=0.5)
     ax.set_aspect('equal', adjustable='box')
 
-def plot_closest(voters : Population, candidates : Population, output_path : str = "./res_dis.png"):
+def plot_closest(voters : Population, candidates : Population, cand_shifts : Optional[list[int]] = None, output_path : str = "./res_dis.png"):
+    cand_shifts = [0 for _ in range(candidates.size())] if cand_shifts is None else cand_shifts
     fig, ax = plt.subplots()
-    closest_colours = [COLOURS[p] for p in closest_points(voters.popul, candidates.popul, distance_euclid)]
-    cand_colours = COLOURS[:candidates.size()]
+    closest_colours = [COLOURS[p + cand_shifts[p]] for p in closest_points(voters.popul, candidates.popul, distance_euclid)]
+    cand_colours = [COLOURS[i + cand_shifts[i]] for i in range(candidates.size())]
     scatter_voters_cands(ax, voters, candidates, closest_colours, cand_colours)
     fig.savefig(output_path)
 
@@ -38,15 +40,21 @@ def plot_approved(voters : Population, candidates : Population, threshold : floa
 
     fig.savefig(output_path)
 
-def plot_pie(results : list[int], output_path : str = "./res_pie.png"):
+def plot_pie(results : list[int], cand_shifts : Optional[list[int]] = None, output_path : str = "./res_pie.png"):
+    cand_shifts = [0 for _ in range(len(results))] if cand_shifts is None else cand_shifts
+    cand_colours = [COLOURS[i + cand_shifts[i]] for i in range(len(results))]
+    cand_names = [CAND_NAMES[i + cand_shifts[i]] for i in range(len(results))]
     fig, ax = plt.subplots()
-    ax.pie(x=results, labels=CAND_NAMES[:len(results)], colors=COLOURS[:len(results)],
+    ax.pie(x=results, labels=cand_names, colors=cand_colours,
            autopct=lambda p : '{:.2f}%  ({:,.0f})'.format(p,p * sum(results)/100))
     fig.savefig(output_path)
 
-def plot_bar(results : list[int], output_path : str = "./res_bar.png"):
+def plot_bar(results : list[int], cand_shifts : Optional[list[int]] = None, output_path : str = "./res_bar.png"):
+    cand_shifts = [0 for _ in range(len(results))] if cand_shifts is None else cand_shifts
+    cand_colours = [COLOURS[i + cand_shifts[i]] for i in range(len(results))]
+    cand_names = [CAND_NAMES[i + cand_shifts[i]] for i in range(len(results))]
     fig, ax = plt.subplots()
-    ax.bar(x=CAND_NAMES[:len(results)], height=results, color=COLOURS[:len(results)])
+    ax.bar(x=cand_names, height=results, color=cand_colours)
     fig.savefig(output_path)
 
 # TODO other types of plots
