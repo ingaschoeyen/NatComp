@@ -8,6 +8,10 @@ if __name__ == "__main__":
     voters.init_uniform(1000)
     cands.init_uniform(10)
 
+
+    results = fptp(voters, cands)
+    print(compute_vse(voters, cands, np.argmax(results)))
+
     # First past the post
     results = fptp(voters, cands)
     plot_closest(voters, cands, output_path="./vis_dis.png")
@@ -45,8 +49,9 @@ if __name__ == "__main__":
     shifts = [0 for _ in range(candidates.size())]
     results = fptp(voters, candidates, distance_euclid)
     worst_cand = np.argmin(results)
-    plot_closest(voters, candidates, output_path="./" + str(round) + "vis_dis.png")
-    plot_bar(results, output_path="./" + str(round) + "res_dis.png")
+    plot_closest(voters, candidates, output_path="./vse_" + str(round) + "_vis.png")
+    # plot_pie(results, output_path="./vse_" + str(round) + "_pie.png"
+    plot_bar(results, output_path="./vse_" + str(round) + "_bar.png")
     print("Instanf runoff round", round, "VSE:", vse(voters, candidates, results))
     while results[worst_cand] / voters.size() <= inst_run_thres:
         # Move candidates with higher id than worst_cand to the left by 1, and add 1 to their shift
@@ -58,7 +63,7 @@ if __name__ == "__main__":
         worst_cand = np.argmin(results)
         round += 1
 
-        plot_closest(voters, candidates, shifts, output_path="./" + str(round) + "vis_dis.png")
-        # plot_pie(results, output_path="./res_pie_fptp")
-        plot_bar(results, shifts, output_path="./" + str(round) + "res_dis.png")
+        plot_closest(voters, candidates, output_path="./vse_" + str(round) + "_vis.png")
+        # plot_pie(results, output_path="./vse_" + str(round) + "_pie.png"
+        plot_bar(results, output_path="./vse_" + str(round) + "_bar.png")
         print("Instanf runoff round", round, "VSE:", vse(voters, candidates, results))

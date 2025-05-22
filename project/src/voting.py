@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import scipy.optimize
 from geometry import *
 
 # TODO Voter might be more complex, i. e. in their strategy of how honestly they vote
@@ -159,7 +160,8 @@ def percentage(results : list[int]):
     vote_sum = sum(results)
     return [votes / vote_sum for votes in results]
 
-# TODO Voter satisfaction efficiency
+# Voter satisfaction efficiency
+# TODO alternatives - measure utility non-linearly, use softmax?
 def vse(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
     perc = percentage(results)
     satisfaction_sum = 0
