@@ -1,6 +1,6 @@
 import numpy as np
 import scipy
-import scipy.optimize
+import scipy.optimize._linprog
 from geometry import *
 
 # TODO Voter might be more complex, i. e. in their strategy of how honestly they vote
@@ -160,16 +160,26 @@ def percentage(results : list[int]):
     vote_sum = sum(results)
     return [votes / vote_sum for votes in results]
 
-# Voter satisfaction efficiency
+def total_utility(voters : Population, candidates : Population, dist_metric = distance_euclid):
+    utilities = [0 for _ in range(candidates.size())]
+    for i, candidate in enumerate(candidates.popul):
+        for voter in voters.popul:
+            utilities[i] += dist_metric(candidate, voter)
+    return utilities
+
+# Voter satisfaction efficiency - average utility approach
+# Measures the (average) weighted distance between voters and candidates
 # TODO alternatives - measure utility non-linearly, use softmax?
-def vse(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
-    perc = percentage(results)
-    satisfaction_sum = 0
-    for voter in voters.popul:
-        utilities = point_distances(voter, candidates.popul, dist_metric)
-        worst_util, best_util = max(utilities), min(utilities)
-        result_util = 0
-        for i in range(candidates.size()):
-            result_util += utilities[i] * perc[i]
-        satisfaction_sum += (worst_util - result_util) / (worst_util - best_util)
-    return satisfaction_sum / voters.size()
+def vse_util(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+    utilities = total_utility(voters, candidates, dist_metric)
+    worst, best = max(utilities), min(utilities)
+    percentages = percentage(results)
+    current = sum([perc * util for perc, util in zip(percentages, utilities)])
+
+    current, best = worst - current, worst - best
+    assert best >= current >= 0 # No solution worse than 0
+    return current / best if best != 0 else 1 # In case best == worst
+
+# TODO Voter satisfaction efficiency - maximise compromise approach
+def vse_comp(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+    pass
