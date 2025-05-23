@@ -1,6 +1,6 @@
 import numpy as np
 import scipy
-import scipy.optimize
+import scipy.optimize._linprog
 from geometry import *
 
 # TODO Voter might be more complex, i. e. in their strategy of how honestly they vote
@@ -160,6 +160,13 @@ def percentage(results : list[int]):
     vote_sum = sum(results)
     return [votes / vote_sum for votes in results]
 
+def total_utility(voters : Population, candidates : Population, dist_metric = distance_euclid):
+    utilities = [0 for _ in range(candidates.size())]
+    for i, candidate in enumerate(candidates.popul):
+        for voter in voters.popul:
+            utilities[i] += dist_metric(candidate, voter)
+    return utilities
+
 # Voter satisfaction efficiency
 # TODO alternatives - measure utility non-linearly, use softmax?
 def vse(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
@@ -173,3 +180,36 @@ def vse(voters : Population, candidates : Population, results : list[int], dist_
             result_util += utilities[i] * perc[i]
         satisfaction_sum += (worst_util - result_util) / (worst_util - best_util)
     return satisfaction_sum / voters.size()
+
+def vse2(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+    cost = total_utility(voters, candidates, dist_metric)
+    best_res = scipy.optimize.linprog(
+        c=cost,
+        A_eq=[[1 for _ in range(candidates.size())]], b_eq=[1],
+        bounds = [(0, 1) for _ in range(candidates.size())])
+
+    percentages = percentage(results)
+    current_res = sum([perc * util for perc, util in zip(percentages, cost)])
+
+    cost = [-c for c in cost]
+    worst_res = scipy.optimize.linprog(
+        c=cost,
+        A_eq=[[1 for _ in range(candidates.size())]], b_eq=[1],
+        bounds = [(0, 1) for _ in range(candidates.size())])
+
+    assert best_res.success # There should always be a feasible solution - assign all votes to one candidate
+
+    worst = -worst_res.fun
+    current, best = worst - current_res, worst - best_res.fun
+    assert best >= current >= 0 # No solution worse than 0
+    return current / best if best != 0 else 1 # In case best == worst
+
+def vse3(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+    utilities = total_utility(voters, candidates, dist_metric)
+    worst, best = max(utilities), min(utilities)
+    percentages = percentage(results)
+    current = sum([perc * util for perc, util in zip(percentages, utilities)])
+
+    current, best = worst - current, worst - best
+    assert best >= current >= 0 # No solution worse than 0
+    return current / best if best != 0 else 1 # In case best == worst
