@@ -27,6 +27,7 @@ def plot_closest(voters : Population, candidates : Population, cand_shifts : Opt
     cand_colours = [COLOURS[i + cand_shifts[i]] for i in range(candidates.size())]
     scatter_voters_cands(ax, voters, candidates, closest_colours, cand_colours)
     fig.savefig(output_path)
+    plt.close()
 
 def plot_approved(voters : Population, candidates : Population, threshold : float, radius_measure, output_path : str = "./res_dis.png"):
     fig, ax = plt.subplots()
@@ -39,6 +40,7 @@ def plot_approved(voters : Population, candidates : Population, threshold : floa
         ax.add_patch(circle)
 
     fig.savefig(output_path)
+    plt.close()
 
 def plot_pie(results : list[int], cand_shifts : Optional[list[int]] = None, output_path : str = "./res_pie.png"):
     cand_shifts = [0 for _ in range(len(results))] if cand_shifts is None else cand_shifts
@@ -48,6 +50,7 @@ def plot_pie(results : list[int], cand_shifts : Optional[list[int]] = None, outp
     ax.pie(x=results, labels=cand_names, colors=cand_colours,
            autopct=lambda p : '{:.2f}%  ({:,.0f})'.format(p,p * sum(results)/100))
     fig.savefig(output_path)
+    plt.close()
 
 def plot_bar(results : list[int], cand_shifts : Optional[list[int]] = None, output_path : str = "./res_bar.png"):
     cand_shifts = [0 for _ in range(len(results))] if cand_shifts is None else cand_shifts
@@ -56,6 +59,7 @@ def plot_bar(results : list[int], cand_shifts : Optional[list[int]] = None, outp
     fig, ax = plt.subplots()
     ax.bar(x=cand_names, height=results, color=cand_colours)
     fig.savefig(output_path)
+    plt.close()
 
 # TODO other types of plots
 # TODO plot quality (VSE) dependent on parameters of system
