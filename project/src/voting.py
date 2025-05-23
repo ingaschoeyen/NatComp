@@ -178,12 +178,12 @@ def vse_util(voters : Population, candidates : Population, results : list[float]
     assert math.isclose(sum(results), 1.0, rel_tol=1e-4) # <results> must be a distribution on parties
 
     utilities = total_utility(voters, candidates, dist_metric)
-    worst, best = max(utilities), min(utilities)
+    best = min(utilities)
     current = sum([perc * util for perc, util in zip(results, utilities)])
+    random = sum(utilities) / len(utilities)
 
-    current, best = worst - current, worst - best
-    assert best >= current >= 0 # No solution worse than 0
-    return current / best if best != 0 else 1 # In case best == worst
+    assert random >= best # In worst case, we can always vote randomly
+    return (random - current) / (random - best) if random - best != 0 else 1 # In case random == best
 
 # TODO Voter satisfaction efficiency - maximise compromise approach
 def vse_comp(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
