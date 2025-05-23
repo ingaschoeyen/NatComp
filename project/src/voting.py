@@ -170,11 +170,10 @@ def total_utility(voters : Population, candidates : Population, dist_metric = di
 # Voter satisfaction efficiency - average utility approach
 # Measures the (average) weighted distance between voters and candidates
 # TODO alternatives - measure utility non-linearly, use softmax?
-def vse_util(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+def vse_util(voters : Population, candidates : Population, results : list[float], dist_metric = distance_euclid):
     utilities = total_utility(voters, candidates, dist_metric)
     worst, best = max(utilities), min(utilities)
-    percentages = percentage(results)
-    current = sum([perc * util for perc, util in zip(percentages, utilities)])
+    current = sum([perc * util for perc, util in zip(results, utilities)])
 
     current, best = worst - current, worst - best
     assert best >= current >= 0 # No solution worse than 0
