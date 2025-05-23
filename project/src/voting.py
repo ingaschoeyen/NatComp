@@ -167,44 +167,10 @@ def total_utility(voters : Population, candidates : Population, dist_metric = di
             utilities[i] += dist_metric(candidate, voter)
     return utilities
 
-# Voter satisfaction efficiency
+# Voter satisfaction efficiency - average utility approach
+# Measures the (average) weighted distance between voters and candidates
 # TODO alternatives - measure utility non-linearly, use softmax?
-def vse(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
-    perc = percentage(results)
-    satisfaction_sum = 0
-    for voter in voters.popul:
-        utilities = point_distances(voter, candidates.popul, dist_metric)
-        worst_util, best_util = max(utilities), min(utilities)
-        result_util = 0
-        for i in range(candidates.size()):
-            result_util += utilities[i] * perc[i]
-        satisfaction_sum += (worst_util - result_util) / (worst_util - best_util)
-    return satisfaction_sum / voters.size()
-
-def vse2(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
-    cost = total_utility(voters, candidates, dist_metric)
-    best_res = scipy.optimize.linprog(
-        c=cost,
-        A_eq=[[1 for _ in range(candidates.size())]], b_eq=[1],
-        bounds = [(0, 1) for _ in range(candidates.size())])
-
-    percentages = percentage(results)
-    current_res = sum([perc * util for perc, util in zip(percentages, cost)])
-
-    cost = [-c for c in cost]
-    worst_res = scipy.optimize.linprog(
-        c=cost,
-        A_eq=[[1 for _ in range(candidates.size())]], b_eq=[1],
-        bounds = [(0, 1) for _ in range(candidates.size())])
-
-    assert best_res.success # There should always be a feasible solution - assign all votes to one candidate
-
-    worst = -worst_res.fun
-    current, best = worst - current_res, worst - best_res.fun
-    assert best >= current >= 0 # No solution worse than 0
-    return current / best if best != 0 else 1 # In case best == worst
-
-def vse3(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+def vse_util(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
     utilities = total_utility(voters, candidates, dist_metric)
     worst, best = max(utilities), min(utilities)
     percentages = percentage(results)
@@ -213,3 +179,7 @@ def vse3(voters : Population, candidates : Population, results : list[int], dist
     current, best = worst - current, worst - best
     assert best >= current >= 0 # No solution worse than 0
     return current / best if best != 0 else 1 # In case best == worst
+
+# TODO Voter satisfaction efficiency - maximise compromise approach
+def vse_comp(voters : Population, candidates : Population, results : list[int], dist_metric = distance_euclid):
+    pass
