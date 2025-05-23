@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 import scipy.optimize._linprog
 from geometry import *
+import math
 
 # TODO Voter might be more complex, i. e. in their strategy of how honestly they vote
 Voter = Point
@@ -48,62 +49,65 @@ class Population():
         return len(self.popul)
 
 
+def trunc_votes(vote_counts : list[int], vote_sum : int, threshold : float):
+    return [votes if votes / vote_sum >= threshold else 0 for votes in vote_counts]
+
 # First past the post (Instant runoff/plurality)
 # Every voter has one vote to cast
 # Spoiler effect
-def fptp(voters : Population, candidates : Population, dist_metric = distance_euclid):
+def fptp(voters : Population, candidates : Population, threshold : float = 0.0, dist_metric = distance_euclid):
     assert candidates.size() > 0
 
-    vote_count = [0 for _ in range(candidates.size())]
+    vote_counts = [0 for _ in range(candidates.size())]
     for favourite in closest_points(voters.popul, candidates.popul, dist_metric):
-        vote_count[favourite] += 1
+        vote_counts[favourite] += 1
 
-    return vote_count
+    return trunc_votes(vote_counts, voters.size(), threshold) if threshold > 0 else vote_counts
 
 # Approval voting - relative to best and worst candidate
 # Every voter can approve of (vote for) any number of candidates
 # If candidates rank is at most <threshold> % of distance between the rank of best and worst candidate, they are approved
 # (Always approves at least the best candidate)
-def approval_between(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
-    vote_count = [0 for _ in range(candidates.size())]
+def approval_between(voters : Population, candidates : Population, ratio : float, dist_metric = distance_euclid):
+    votes_counts= [0 for _ in range(candidates.size())]
     for voter in voters.popul:
         candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
         best_cand_dist, worst_cand_dist = min(candidate_ranks), max(candidate_ranks)
         best_worst_dist = worst_cand_dist - best_cand_dist
         for i, cand_rank in enumerate(candidate_ranks):
-            if (cand_rank - best_cand_dist) / best_worst_dist <= threshold:
-                vote_count[i] += 1
+            if (cand_rank - best_cand_dist) / best_worst_dist <= ratio:
+                votes_counts[i] += 1
 
-    return vote_count
+    return votes_counts
 
 # Approval voting - relative only to worst candidate (absolute merit)
 # Every voter can approve of (vote for) any number of candidates
 # If candidate is at most <threshold> % of distance to worst candidate close to the voter, they are approved
 # (Might not approve anyone)
-def approval_worst(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
-    vote_count = [0 for _ in range(candidates.size())]
+def approval_worst(voters : Population, candidates : Population, ratio : float, dist_metric = distance_euclid):
+    votes_counts= [0 for _ in range(candidates.size())]
     for voter in voters.popul:
         candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
         worst_cand_dist = max(candidate_ranks)
         for i, cand_rank in enumerate(candidate_ranks):
-            if (cand_rank / worst_cand_dist) <= threshold:
-                vote_count[i] += 1
+            if (cand_rank / worst_cand_dist) <= ratio:
+                votes_counts[i] += 1
 
-    return vote_count
+    return votes_counts
 
 # Approval voting - relatively to best candidate
 # Every voter can approve of (vote for) any number of candidates
 # If candidate is at most (1 + <threshold>) % of distance above the candidate closest to the voter, they are approved
-def approval_best(voters : Population, candidates : Population, threshold : float, dist_metric = distance_euclid):
-    vote_count = [0 for _ in range(candidates.size())]
+def approval_best(voters : Population, candidates : Population, ratio : float, dist_metric = distance_euclid):
+    votes_counts= [0 for _ in range(candidates.size())]
     for voter in voters.popul:
         candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
         best_cand_dist = min(candidate_ranks)
         for i, cand_rank in enumerate(candidate_ranks):
-            if (cand_rank / best_cand_dist) <= 1 + threshold:
-                vote_count[i] += 1
+            if (cand_rank / best_cand_dist) <= 1 + ratio:
+                votes_counts[i] += 1
 
-    return vote_count
+    return votes_counts
 
 # TODO approval with weighted votes?
 # E. g. more votes, less weight each vote has,
@@ -126,7 +130,7 @@ def instant_runoff(voters : Population, candidates : Population, threshold : flo
     final_results = [0 for _ in range(candidates.size())]
     candidates = candidates.copy()
     shifts = [0 for _ in range(candidates.size())]
-    results = fptp(voters, candidates, dist_metric)
+    results = fptp(voters, candidates, dist_metric=dist_metric)
     worst_cand = np.argmin(results)
     while results[worst_cand] / voters.size() <= threshold:
         # Move candidates with higher id than worst_cand to the left by 1, and add 1 to their shift
@@ -134,7 +138,7 @@ def instant_runoff(voters : Population, candidates : Population, threshold : flo
             shifts[i] = shifts[i + 1] + 1
         shifts.pop()
         candidates.pop(worst_cand)
-        results = fptp(voters, candidates, dist_metric)
+        results = fptp(voters, candidates, dist_metric=dist_metric)
         worst_cand = np.argmin(results)
 
     # Map votes of non-eliminated candidates back to original indices
@@ -171,6 +175,8 @@ def total_utility(voters : Population, candidates : Population, dist_metric = di
 # Measures the (average) weighted distance between voters and candidates
 # TODO alternatives - measure utility non-linearly, use softmax?
 def vse_util(voters : Population, candidates : Population, results : list[float], dist_metric = distance_euclid):
+    assert math.isclose(sum(results), 1.0, rel_tol=1e-4) # <results> must be a distribution on parties
+
     utilities = total_utility(voters, candidates, dist_metric)
     worst, best = max(utilities), min(utilities)
     current = sum([perc * util for perc, util in zip(results, utilities)])
