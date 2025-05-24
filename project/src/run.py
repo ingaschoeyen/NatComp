@@ -2,24 +2,11 @@ from plotting import *
 from geometry import *
 from voting import *
 
-def print_results_approved(voters, candidates, approval_meth, radius, radius_meth, prefix : str):
-    votes_counts = approval_meth(voters, candidates, radius)
-    results = percentage(votes_counts)
-    plot_approved(voters, candidates, radius, radius_meth, output_path="./" + prefix + "_vis.png")
-    # plot_pie(votes_counts, output_path="./" + prefix + "_pie")
-    plot_bar(votes_counts, output_path="./" + prefix + "_bar")
-    print(prefix, "VSE:", vse_util(voters, candidates, results))
-    votes_counts_trunc = trunc_votes(votes_counts, voters.size(), threshold)
-    results_trunc = percentage(votes_counts_trunc)
-    plot_bar(votes_counts_trunc, output_path="./" + prefix + "_bar_trunc")
-    print(prefix, "after trunc VSE", vse_util(voters, candidates, results_trunc))
-
-
 # TODO Create voters, candidates, run simulations, calculate and plot results, etc.
 if __name__ == "__main__":
     voters, candidates = Population(), Population()
-    voters.init_normal(1000)
-    candidates.init_normal(10)
+    voters.init_normal(20)
+    candidates.init_normal(3)
 
     threshold = 0.1
 
@@ -36,10 +23,19 @@ if __name__ == "__main__":
     print("fptp after trunc VSE", vse_util(voters, candidates, results_trunc))
 
     # Approval
-    radius = 0.5
-    print_results_approved(voters, candidates, approval_best, radius, radius_closest, "app_closest")
-    print_results_approved(voters, candidates, approval_between, radius, radius_between, "app_between")
-    print_results_approved(voters, candidates, approval_worst, radius, radius_furthest, "app_furthest")
+    best_preference = 1
+    worst_tolerance = 1
+
+    votes_counts = approval_rel(voters, candidates, best_preference=best_preference, worst_tolerance=worst_tolerance)
+    results = percentage(votes_counts)
+    plot_approved_rel(voters, candidates, best_preference=best_preference, worst_tolerance=worst_tolerance, output_path="./app_rel_vis.png")
+    # plot_pie(votes_counts, output_path="./app_rel_pie")
+    plot_bar(votes_counts, output_path="./app_rel_bar")
+    print("app rel VSE:", vse_util(voters, candidates, results))
+    votes_counts_trunc = trunc_votes(votes_counts, sum(votes_counts), threshold)
+    results_trunc = percentage(votes_counts_trunc)
+    plot_bar(votes_counts_trunc, output_path="./app_rel_bar_trunc")
+    print("app rel after trunc VSE", vse_util(voters, candidates, results_trunc))
 
     # Instant runoff
     votes_counts = instant_runoff(voters, candidates, threshold=threshold)
@@ -60,7 +56,7 @@ if __name__ == "__main__":
     # plot_pie(votes_counts, output_path="./vse_" + str(round) + "_pie.png"
     plot_bar(votes_counts, cand_shifts=shifts, output_path="./inst_" + str(round) + "_bar.png")
     # print("Instanf runoff round", round, "VSE:", vse_util(voters, candidates, results))
-    while results[worst_cand] <= threshold:
+    while results[worst_cand] < threshold:
         # Move candidates with higher id than worst_cand to the left by 1, and add 1 to their shift
         for i in range(worst_cand, candidates.size() - 1):
             shifts[i] = shifts[i + 1] + 1

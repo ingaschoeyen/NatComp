@@ -9,7 +9,6 @@ COLOURS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e
 CAND_NAMES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
 # Colours correspond to closest candidates
-
 def scatter_voters_cands(ax : plt.Axes, voters : Population, candidates : Population, voter_colours : list[str], cand_colours : list[str]):
     ax.scatter(np.array(voters.popul)[:,0], np.array(voters.popul)[:,1],
                c=voter_colours,
@@ -29,13 +28,13 @@ def plot_closest(voters : Population, candidates : Population, cand_shifts : Opt
     fig.savefig(output_path)
     plt.close()
 
-def plot_approved(voters : Population, candidates : Population, threshold : float, radius_measure, output_path : str = "./res_dis.png"):
+def plot_approved_rel(voters : Population, candidates : Population, best_preference : float, worst_tolerance : float, output_path : str = "./res_dis.png"):
     fig, ax = plt.subplots()
     closest_colours = [COLOURS[p] for p in closest_points(voters.popul, candidates.popul, distance_euclid)]
     cand_colours = COLOURS[:candidates.size()]
     scatter_voters_cands(ax, voters, candidates, closest_colours, cand_colours)
 
-    circles = [plt.Circle(voter, radius_measure(voter, candidates.popul, threshold), color=closest_colours[i], alpha=0.1) for i, voter in enumerate(voters.popul)]
+    circles = [plt.Circle(voter, radius_relative(voter, candidates.popul, closest_w=best_preference, furthest_w=worst_tolerance), color=closest_colours[i], alpha=0.1) for i, voter in enumerate(voters.popul)]
     for circle in circles:
         ax.add_patch(circle)
 
