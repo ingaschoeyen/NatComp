@@ -1,6 +1,4 @@
 import numpy as np
-import scipy
-import scipy.optimize._linprog
 from geometry import *
 import math
 
@@ -66,45 +64,15 @@ def fptp(voters : Population, candidates : Population, threshold : float = 0.0, 
 
 # Approval voting - relative to best and worst candidate
 # Every voter can approve of (vote for) any number of candidates
-# If candidates rank is at most <threshold> % of distance between the rank of best and worst candidate, they are approved
-# (Always approves at least the best candidate)
-def approval_between(voters : Population, candidates : Population, ratio : float, dist_metric = distance_euclid):
+# Approval range of a voter is weighted average of distance to best and worst candidate
+def approval_rel(voters : Population, candidates : Population, best_preference : float, worst_tolerance : float, dist_metric = distance_euclid):
     votes_counts= [0 for _ in range(candidates.size())]
     for voter in voters.popul:
         candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
         best_cand_dist, worst_cand_dist = min(candidate_ranks), max(candidate_ranks)
-        best_worst_dist = worst_cand_dist - best_cand_dist
+        weighted_avg = (best_cand_dist * best_preference + worst_cand_dist * worst_tolerance) / 2
         for i, cand_rank in enumerate(candidate_ranks):
-            if (cand_rank - best_cand_dist) / best_worst_dist <= ratio:
-                votes_counts[i] += 1
-
-    return votes_counts
-
-# Approval voting - relative only to worst candidate (absolute merit)
-# Every voter can approve of (vote for) any number of candidates
-# If candidate is at most <threshold> % of distance to worst candidate close to the voter, they are approved
-# (Might not approve anyone)
-def approval_worst(voters : Population, candidates : Population, ratio : float, dist_metric = distance_euclid):
-    votes_counts= [0 for _ in range(candidates.size())]
-    for voter in voters.popul:
-        candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
-        worst_cand_dist = max(candidate_ranks)
-        for i, cand_rank in enumerate(candidate_ranks):
-            if (cand_rank / worst_cand_dist) <= ratio:
-                votes_counts[i] += 1
-
-    return votes_counts
-
-# Approval voting - relatively to best candidate
-# Every voter can approve of (vote for) any number of candidates
-# If candidate is at most (1 + <threshold>) % of distance above the candidate closest to the voter, they are approved
-def approval_best(voters : Population, candidates : Population, ratio : float, dist_metric = distance_euclid):
-    votes_counts= [0 for _ in range(candidates.size())]
-    for voter in voters.popul:
-        candidate_ranks = point_distances(voter, candidates.popul, dist_metric)
-        best_cand_dist = min(candidate_ranks)
-        for i, cand_rank in enumerate(candidate_ranks):
-            if (cand_rank / best_cand_dist) <= 1 + ratio:
+            if cand_rank <= weighted_avg:
                 votes_counts[i] += 1
 
     return votes_counts
@@ -132,7 +100,7 @@ def instant_runoff(voters : Population, candidates : Population, threshold : flo
     shifts = [0 for _ in range(candidates.size())]
     results = fptp(voters, candidates, dist_metric=dist_metric)
     worst_cand = np.argmin(results)
-    while results[worst_cand] / voters.size() <= threshold:
+    while results[worst_cand] / voters.size() < threshold:
         # Move candidates with higher id than worst_cand to the left by 1, and add 1 to their shift
         for i in range(worst_cand, candidates.size() - 1):
             shifts[i] = shifts[i + 1] + 1
