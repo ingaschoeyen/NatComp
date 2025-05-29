@@ -1,9 +1,106 @@
 import numpy as np
 from geometry import *
 import math
+from enum import Enum
+import random
 
-# TODO Voter might be more complex, i. e. in their strategy of how honestly they vote
-Voter = Point
+
+class Strategy(Enum):
+    RANDOM = 1 # Vote randomly
+    HONEST = 2 # Vote according to personal preferences, polls have no effect
+    POPULIST = 3 # Support most popular candidate, personal preferences have no effect
+    REALIST = 4 # Support most popular tolerated candidate, support all tolerated if possible
+    LOYAL = 5 # Support favourite candidate, support only non-threatening tolerated candidates
+
+class System(Enum):
+    FPTP = 1
+    INSTANT_RUNOFF = 2
+    APPROVAL = 3
+
+class Voter():
+
+    coords : Point
+    strat : Strategy
+    best_preference : float
+    worst_tolerance : float
+
+
+    def __init__(self, coords : Point, strat : Strategy = Strategy.HONEST):
+        self.coords : Point = coords
+        self.strat = strat
+
+    def get_tolerance(self, best_distance, worst_distance):
+        return (self.best_preference * best_distance + self.worst_tolerance * worst_distance) / 2
+
+    # Tolerated candidates sorted in order of preference
+    # TODO optimization: try finding min max first, then filter, and sort last
+    def get_tolerated(self, candidates : 'Population', dist_metric = distance_euclid):
+        cand_points = [cand.coords for cand in candidates.popul]
+        distances = point_distances(self.coords, cand_points, dist_metric)
+        sorted_cands = sorted(zip(distances, range(candidates.size())))
+        best_dist, best_id = sorted_cands[0]
+        worst_dist, worst_id = sorted_cands[-1]
+        tolerance = self.get_tolerance(best_dist, worst_dist)
+        tolerated = []
+        for dist, cand in sorted_cands:
+            if dist > tolerance:
+                break
+            tolerated.append(cand)
+        return tolerated
+
+    # Favourite candidate
+    def get_favourite(self, candidates : 'Population', dist_metric = distance_euclid):
+        cand_points = [cand.coords for cand in candidates.popul]
+        return np.argmin(point_distances(self.coords, cand_points, dist_metric))
+
+    def get_votes(self, candidates : 'Population', polls : list[float], system : System, dist_metric = distance_euclid):
+        assert candidates.size() == len(polls)
+        votes_counts = [0 for _ in range(candidates.size())]
+
+        match system:
+
+            case System.FPTP | System.INSTANT_RUNOFF: # IR is iterated FPTP
+
+                match self.strat:
+
+                    case Strategy.RANDOM:
+                        votes_counts[random.randint(0, candidates.size())] += 1
+
+                    case Strategy.HONEST | Strategy.LOYAL:
+                        votes_counts[self.get_favourite(candidates, dist_metric)] += 1
+
+                    case Strategy.POPULIST:
+                        votes_counts[np.argmax(polls)] += 1
+
+                    case Strategy.REALIST: # Vote for most popular tolerated candidate
+                        tolerated = self.get_tolerated(candidates, dist_metric)
+                        if len(tolerated) > 0:
+                            _, most_pop_tolerated = max(zip([polls[cand] for cand in tolerated], tolerated))
+                            votes_counts[most_pop_tolerated] += 1
+
+            case System.APPROVAL:
+
+                match self.strat:
+
+                    case Strategy.RANDOM: # Approve of candidates at random
+                        votes_counts = [random.randint(0, 1) for _ in range(candidates.size())]
+
+                    case Strategy.HONEST | Strategy.REALIST: # Approve of tolerated candidates
+                        for cand in self.get_tolerated(candidates, dist_metric):
+                            votes_counts[cand] += 1
+
+                    case Strategy.POPULIST:
+                        votes_counts[np.argmax(polls)] = 1 # Approve only of most popular candidate
+
+                    case Strategy.LOYAL: # Approve of favourite and non-threatening tolerated candidates
+                        tolerated = self.get_tolerated(candidates, dist_metric)
+                        favourite = tolerated[0] if len(tolerated) > 0 else self.get_favourite(candidates, dist_metric)
+                        for cand in tolerated:
+                            if polls[cand] < polls[favourite]:
+                                votes_counts[cand] += 1
+                        votes_counts[favourite] += 1
+
+        return votes_counts
 
 class Population():
 
@@ -45,6 +142,10 @@ class Population():
 
     def size(self):
         return len(self.popul)
+
+    # Get the polls from the population when presented with a list of candidates
+    def get_polls(self, candidates : 'Population'):
+        pass
 
 
 def trunc_votes(vote_counts : list[int], vote_sum : int, threshold : float):
@@ -140,7 +241,8 @@ def total_utility(voters : Population, candidates : Population, dist_metric = di
     return utilities
 
 # Voter satisfaction efficiency - average utility approach
-# Measures the (average) weighted distance between voters and candidates
+# Measures the (average) distance between voters and candidates weighted by the results,
+# and compares it to average obtained from voting randomly ("worst possible system")
 # TODO alternatives - measure utility non-linearly, use softmax?
 def vse_util(voters : Population, candidates : Population, results : list[float], dist_metric = distance_euclid):
     assert math.isclose(sum(results), 1.0, rel_tol=1e-4) # <results> must be a distribution on parties
