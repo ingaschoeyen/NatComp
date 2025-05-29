@@ -1,6 +1,7 @@
 from plotting import *
 from geometry import *
 from voting import *
+from voter import *
 
 # TODO Create voters, candidates, run simulations, calculate and plot results, etc.
 if __name__ == "__main__":
@@ -71,4 +72,3 @@ if __name__ == "__main__":
         # plot_pie(votes_counts, output_path="./inst_" + str(round) + "_pie.png"
         plot_bar(votes_counts, cand_shifts=shifts, output_path="./inst_" + str(round) + "_bar.png")
         # print("Instanf runoff round", round, "VSE:", vse_util(voters, candidates, results))
-
