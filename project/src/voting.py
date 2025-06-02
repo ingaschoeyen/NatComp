@@ -114,4 +114,40 @@ def vse_util(voters : list[Voter], candidates : list[Candidate], results : list[
 
 # TODO Voter satisfaction efficiency - maximise compromise approach
 def vse_comp(voters : list[Voter], candidates : list[Candidate], results : list[int], dist_metric = distance_euclid):
-    pass
+    utilities = total_utility(voters, candidates, dist_metric)
+    current = [perc * util for perc, util in zip(results, utilities)]
+
+    mean_val = np.mean(current)
+    std_dev = np.std(current)
+
+    if np.isclose(std_dev, 0):
+        return 1.0  # Perfect uniformity
+
+    if np.isclose(mean_val, 0):
+        return 0.0  # Avoid division by zero; implies minimal utility overall
+
+    # Uniformity = 1 - Coefficient of Variation
+    score = 1 - (std_dev / mean_val)
+    return max(0.0, min(1.0, score))
+
+def vse_vdist_comp(voters, candidates, results, dist_metric = distance_euclid):
+    total_votes = sum(results)
+    if total_votes == 0:
+        return 1.0  # If nobody got votes, there's no variation
+
+    weighted_sums = []
+    for voter in voters:
+        dists = [dist_metric(voter.coords, cand.coords) for cand in candidates]
+        weighted_sum = sum(perc * d for perc, d in zip(results, dists))
+        weighted_sums.append(weighted_sum)
+
+    mean_val = np.mean(weighted_sums)
+    std_dev = np.std(weighted_sums)
+
+    if np.isclose(std_dev, 0):
+        return 1.0
+    if np.isclose(mean_val, 0):
+        return 0.0
+
+    uniformity_score = 1 - (std_dev / mean_val)
+    return max(0.0, min(1.0, uniformity_score))

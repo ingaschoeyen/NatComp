@@ -18,6 +18,8 @@ if __name__ == "__main__":
     # plot_pie(votes_counts, output_path="./fptp_pie")
     plot_bar(votes_counts, output_path="./fptp_bar")
     print("fptp VSE:", vse_util(voters, candidates, results))
+    print("fptp VSE_dist:", vse_vdist_comp(voters, candidates, results))
+    print("fptp VSE_comp:", vse_comp(voters, candidates, results))
     votes_counts_trunc = trunc_votes(votes_counts, len(voters), threshold)
     results_trunc = percentage(votes_counts_trunc)
     plot_bar(votes_counts_trunc, output_path="./fptp_bar_trunc")
