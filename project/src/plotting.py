@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 import matplotlib.pyplot as plt
 from voting import *
 
@@ -51,22 +51,50 @@ def plot_approved(voters : list[Voter], candidates : list[Candidate], output_pat
     fig.savefig(output_path)
     plt.close()
 
-def plot_pie(votes_counts : list[int], cand_shifts : Optional[list[int]] = None, output_path : str = "./res_pie.png"):
+def plot_pie(votes_counts : list[int], params : dict[str, Any] = {}, cand_shifts : Optional[list[int]] = None, output_path : str = "./res_pie.png"):
     cand_shifts = [0 for _ in range(len(votes_counts))] if cand_shifts is None else cand_shifts
     cand_colours = [COLOURS[i + cand_shifts[i]] for i in range(len(votes_counts))]
     cand_names = [CAND_NAMES[i + cand_shifts[i]] for i in range(len(votes_counts))]
     fig, ax = plt.subplots()
+
+    plt.title(params.get('title', "Unknown"))
+
+    textstr = '\n'.join((
+    r'VSE util = %.2f' % (params.get('vse_util', -1), ),
+    r'VSE dist = %.2f' % (params.get('vse_dist', -1), ),
+    r'VSE comp = %.2f' % (params.get('vse_comp', -1), )))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # place a text box in lower right (0.55, 0.30) or upper right (0.55, 0.98) in axes coords
+    ax.text(1.03, 0.98, textstr, transform=ax.transAxes, fontsize=14,
+            verticalalignment='top', bbox=props)
+
     ax.pie(x=votes_counts, labels=cand_names, colors=cand_colours,
            autopct=lambda p : '{:.2f}%  ({:,.0f})'.format(p,p * sum(votes_counts)/100))
+    plt.tight_layout()
     fig.savefig(output_path)
     plt.close()
 
-def plot_bar(votes_counts : list[int], cand_shifts : Optional[list[int]] = None, output_path : str = "./res_bar.png"):
+def plot_bar(votes_counts : list[int], params : dict[str, Any] = {}, cand_shifts : Optional[list[int]] = None, output_path : str = "./res_bar.png"):
     cand_shifts = [0 for _ in range(len(votes_counts))] if cand_shifts is None else cand_shifts
     cand_colours = [COLOURS[i + cand_shifts[i]] for i in range(len(votes_counts))]
     cand_names = [CAND_NAMES[i + cand_shifts[i]] for i in range(len(votes_counts))]
     fig, ax = plt.subplots()
+
+    plt.title(params.get('title', "Unknown"))
+
+    textstr = '\n'.join((
+    r'VSE util = %.2f' % (params.get('vse_util', -1), ),
+    r'VSE dist = %.2f' % (params.get('vse_dist', -1), ),
+    r'VSE comp = %.2f' % (params.get('vse_comp', -1), )))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # place a text box in lower right (0.55, 0.30) or upper right (0.55, 0.98) in axes coords
+    ax.text(1.03, 0.98, textstr, transform=ax.transAxes, fontsize=14,
+            verticalalignment='top', bbox=props)
+
     ax.bar(x=cand_names, height=votes_counts, color=cand_colours)
+    plt.tight_layout()
     fig.savefig(output_path)
     plt.close()
 
