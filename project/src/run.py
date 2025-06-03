@@ -5,11 +5,19 @@ from voter import *
 
 # TODO Create voters, candidates, run simulations, calculate and plot results, etc.
 if __name__ == "__main__":
-    voters = [Voter(point, Strategy.HONEST, 1, 1) for point in get_uniform(10)]
-    candidates = [Candidate(point) for point in get_uniform(3)]
+    voters = [Voter(point, Strategy.HONEST, best_preference=1, worst_tolerance=1) for point in get_uniform(1000)]
+    candidates = [Candidate(point) for point in get_uniform(10)]
 
-    threshold = 0.2
+    threshold = 0.1
     polls = [0 for _ in range(len(candidates))] # TODO
+
+    print("VSE_util uniform votes:", vse_util(voters, candidates, [1/len(candidates) for _ in candidates]))
+    print("VSE_dist uniform votes:", vse_vdist_comp(voters, candidates, [1/len(candidates) for _ in candidates]))
+    print("VSE_comp uniform votes:", vse_comp(voters, candidates, [1/len(candidates) for _ in candidates]))
+
+    print("VSE_util first candidate:", vse_util(voters, candidates, [1] + [0 for _ in range(len(candidates) - 1)]))
+    print("VSE_dist first candidate:", vse_vdist_comp(voters, candidates, [1] + [0 for _ in range(len(candidates) - 1)]))
+    print("VSE_comp first candidate:", vse_comp(voters, candidates, [1] + [0 for _ in range(len(candidates) - 1)]))
 
     # First past the post
     votes_counts = fptp(voters, candidates, polls, threshold=0.0)
@@ -17,13 +25,15 @@ if __name__ == "__main__":
     plot_closest(voters, candidates, output_path="./fptp_vis.png")
     # plot_pie(votes_counts, output_path="./fptp_pie")
     plot_bar(votes_counts, output_path="./fptp_bar")
-    print("fptp VSE:", vse_util(voters, candidates, results))
+    print("fptp VSE_util:", vse_util(voters, candidates, results))
     print("fptp VSE_dist:", vse_vdist_comp(voters, candidates, results))
     print("fptp VSE_comp:", vse_comp(voters, candidates, results))
     votes_counts_trunc = trunc_votes(votes_counts, len(voters), threshold)
     results_trunc = percentage(votes_counts_trunc)
     plot_bar(votes_counts_trunc, output_path="./fptp_bar_trunc")
-    print("fptp after trunc VSE", vse_util(voters, candidates, results_trunc))
+    print("fptp after trunc VSE_util:", vse_util(voters, candidates, results_trunc))
+    print("fptp after trunc VSE_dist:", vse_vdist_comp(voters, candidates, results_trunc))
+    print("fptp after trunc VSE_comp:", vse_comp(voters, candidates, results_trunc))
 
     # Approval
     votes_counts = approval(voters, candidates, polls, threshold=0.0)
@@ -31,18 +41,24 @@ if __name__ == "__main__":
     plot_approved(voters, candidates, output_path="./app_vis.png")
     # plot_pie(votes_counts, output_path="./app_pie")
     plot_bar(votes_counts, output_path="./app_bar")
-    print("app VSE:", vse_util(voters, candidates, results))
+    print("app VSE_util:", vse_util(voters, candidates, results))
+    print("app VSE_dist:", vse_vdist_comp(voters, candidates, results))
+    print("app VSE_comp:", vse_comp(voters, candidates, results))
     votes_counts_trunc = trunc_votes(votes_counts, sum(votes_counts), threshold)
     results_trunc = percentage(votes_counts_trunc)
     plot_bar(votes_counts_trunc, output_path="./app_bar_trunc")
-    print("app after trunc VSE", vse_util(voters, candidates, results_trunc))
+    print("app after trunc VSE_util:", vse_util(voters, candidates, results_trunc))
+    print("app after trunc VSE_dist:", vse_vdist_comp(voters, candidates, results_trunc))
+    print("app after trunc VSE_comp:", vse_comp(voters, candidates, results_trunc))
 
     # Instant runoff
     votes_counts = instant_runoff(voters, candidates, polls, threshold)
     results = percentage(votes_counts)
     # plot_pie(votes_counts, output_path="./inst_pie")
     plot_bar(votes_counts, output_path="./inst_bar")
-    print("Instanf runoff VSE:", vse_util(voters, candidates, results))
+    print("Instanf runoff VSE_util:", vse_util(voters, candidates, results))
+    print("Instanf runoff VSE_dist:", vse_vdist_comp(voters, candidates, results))
+    print("Instanf runoff VSE_comp:", vse_comp(voters, candidates, results))
 
     # TODO plot how instant runoff eliminates candidates and counts votes
 

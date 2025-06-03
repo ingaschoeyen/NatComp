@@ -86,9 +86,9 @@ def approval(voters : list[Voter], candidates : list[Candidate], polls : list[fl
 # TODO approval with a set amount of votes, but able to elect one candidate more than once?
 # would be the same as weighted voting with sum of weights equal to 1
 
-def percentage(results : list[int]):
-    vote_sum = sum(results)
-    return [votes / vote_sum for votes in results]
+def percentage(votes_counts : list[int]):
+    vote_sum = sum(votes_counts)
+    return [votes / vote_sum for votes in votes_counts] if vote_sum != 0 else [0 for _ in votes_counts]
 
 def total_utility(voters : list[Voter], candidates : list[Candidate], dist_metric = distance_euclid):
     utilities = [0 for _ in range(len(candidates))]
@@ -102,7 +102,7 @@ def total_utility(voters : list[Voter], candidates : list[Candidate], dist_metri
 # and compares it to average obtained from voting randomly ("worst possible system")
 # TODO alternatives - measure utility non-linearly, use softmax?
 def vse_util(voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
-    assert math.isclose(sum(results), 1.0, rel_tol=1e-4) # <results> must be a distribution on parties
+    assert np.isclose(sum(results), 1) # <results> must be a distribution on parties
 
     utilities = total_utility(voters, candidates, dist_metric)
     best = min(utilities)
@@ -113,7 +113,7 @@ def vse_util(voters : list[Voter], candidates : list[Candidate], results : list[
     return (random - current) / (random - best) if random - best != 0 else 1 # In case random == best
 
 # TODO Voter satisfaction efficiency - maximise compromise approach
-def vse_comp(voters : list[Voter], candidates : list[Candidate], results : list[int], dist_metric = distance_euclid):
+def vse_comp(voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
     utilities = total_utility(voters, candidates, dist_metric)
     current = [perc * util for perc, util in zip(results, utilities)]
 
@@ -130,10 +130,8 @@ def vse_comp(voters : list[Voter], candidates : list[Candidate], results : list[
     score = 1 - (std_dev / mean_val)
     return max(0.0, min(1.0, score))
 
-def vse_vdist_comp(voters, candidates, results, dist_metric = distance_euclid):
-    total_votes = sum(results)
-    if total_votes == 0:
-        return 1.0  # If nobody got votes, there's no variation
+def vse_vdist_comp(voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
+    assert np.isclose(sum(results), 1) # <results> must be a distribution on parties
 
     weighted_sums = []
     for voter in voters:
