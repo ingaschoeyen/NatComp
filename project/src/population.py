@@ -15,9 +15,9 @@ example_population_params = {
     "high": 1,               # Upper bound for the uniform distribution of voter positions
     "mu": 0,                 # Mean for the normal distribution of voter positions
     "cand_dist": "uniform",  # Distribution type for candidate positions: "uniform", "normal", "cluster", or "custom"
-    "n_candidates": 3,       # Number of candidates in the election
+    "n_candidates": 10,       # Number of candidates in the election
     "voter_dist": "uniform", # Distribution type for voter positions: "uniform", "normal", "cluster", or "custom"
-    "n_voters": 100          # Number of voters in the population
+    "n_voters": 200          # Number of voters in the population
 }
 
 
@@ -61,7 +61,7 @@ class Population():
         if params.get("cand_dist", "uniform") == "normal":
             mu = params.get("mu", 0)
             sigma = params.get("sigma", 1)
-            self.cands = [Candidate([np.random.normal(mu, sigma) for _ in range(dimension)], i) for i in range(n_candidates)]
+            self.cands = [Candidate([float(np.random.normal(mu, sigma)) for _ in range(dimension)], i) for i in range(n_candidates)]
         elif params.get("cand_dist", "uniform") == "cluster":
             self.cands = []
             # TODO Implement cluster distribution for candidates
@@ -69,7 +69,7 @@ class Population():
             self.cands = []
             # TODO Implement custom distribution for candidates
         else:  # Default to uniform distribution
-            self.cands = [Candidate([np.random.uniform(low, high) for _ in range(dimension)], i) for i in range(n_candidates)]
+            self.cands = [Candidate([float(np.random.uniform(low, high)) for _ in range(dimension)], i) for i in range(n_candidates)]
 
     def init_voters(self, params: dict = None):
         if params is None:
@@ -92,7 +92,7 @@ class Population():
             # TODO Implement custom distribution for voters
         else:
             # Default to uniform distribution
-            self.voters = [Voter(coords=[np.random.uniform((low, high), dimension)], strat=np.random.choice(list(Strategy)), parameters=params, id = i) for i in range(n_voters)]
+            self.voters = [Voter(coords=[np.random.uniform(low, high, dimension)], strat=np.random.choice(list(Strategy)), parameters=params, id = i) for i in range(n_voters)]
 
     def init_from_data(self, voters: list[Voter], candidates: list[Candidate]):
 

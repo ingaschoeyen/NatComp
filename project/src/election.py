@@ -170,13 +170,15 @@ class Election():
         votes_counts = self.sum_votes(mytypavoters=mycoolvoters, candidates=candidates, polls=polls, system=self.system, dist_metric=dist_metric)
         results = self.percentage(votes_counts)
         vse = self.vse_util(mycoolvoters, candidates, results, dist_metric)
-        return results, vse
+        return votes_counts, results, vse
     
-    def plot_an_election(self, voters: Population, candidates: Population, votes_counts: list[int], results: list[float], output_path: str = None, dist_metric = distance_euclid):
+    def plot_an_election(self, voters: Population, candidates: Population, 
+                         votes_counts: list[int], results: list[float], output_path: str = None, dist_metric = distance_euclid):
         if output_path is None:
             output_path = f"./election_{self.system.name.lower()}.png"
-        plot_closest(voters, candidates, output_path=output_path, dist_metric=dist_metric)
+        plot_closest(voters, candidates, output_path=output_path.replace(".png", "_closest.png"))
         plot_bar(votes_counts, output_path=output_path.replace(".png", "_bar.png"))
         plot_pie(votes_counts, output_path=output_path.replace(".png", "_pie.png"))
+        plot_approved(voters, candidates, output_path=output_path.replace(".png", "_approved.png"))
         return output_path
     

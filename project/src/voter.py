@@ -51,14 +51,14 @@ class Candidate():
 
 class Voter():
 
-    coords: list[float]  # Coordinates of the voter in the space
+    coords: Point  # Coordinates of the voter in the space
     strat : Strategy
     best_preference : float
     worst_tolerance : float
     votes: np.ndarray  # Votes for candidates, indexed by candidate id
     id: int = 0  # Unique identifier for the voter
 
-    def __init__(self, coords, strat : Strategy, parameters: dict, n_candidates : int = 0, id: int = 0):
+    def __init__(self, coords: Point, strat : Strategy, parameters: dict, n_candidates : int = 0, id: int = 0):
         self.coords = coords
         self.strat = strat
         self.parameters = parameters if parameters is not None else example_voter_params

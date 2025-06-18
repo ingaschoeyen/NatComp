@@ -11,10 +11,13 @@ CAND_NAMES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', '
 # Colours correspond to closest candidates
 def scatter_agent_points(ax : plt.Axes, voters_points : list[Point], candidates_points : list[Point],
                          voter_colours : list[str], cand_colours : list[str]):
-    ax.scatter(np.array(voters_points)[:,0], np.array(voters_points)[:,1],
+    voters_points = np.reshape(voters_points, (-1, 2))
+    candidates_points = np.reshape(candidates_points, (-1, 2))
+    print(f"Voters points: {voters_points}")
+    ax.scatter(voters_points[:, 0], voters_points[:, 1],
                c=voter_colours,
                alpha=1)
-    ax.scatter(np.array(candidates_points)[:,0], np.array(candidates_points)[:,1],
+    ax.scatter(candidates_points[:,0], candidates_points[:,1],
                c=cand_colours,
                s=[200 for _ in range(len(candidates_points))],
                alpha=0.5)
@@ -45,8 +48,8 @@ def plot_approved(voters : list[Voter], candidates : list[Candidate], output_pat
     scatter_agent_points(ax, voter_points, cand_points, closest_colours, cand_colours)
 
     circles = [plt.Circle(voter.coords, radius_relative(voter.coords, cand_points, closest_w=voter.best_preference, furthest_w=voter.worst_tolerance), color=closest_colours[i], alpha=0.1) for i, voter in enumerate(voters)]
-    for circle in circles:
-        ax.add_patch(circle)
+    # for circle in circles:
+    #     ax.add_patch(circle)
 
     fig.savefig(output_path)
     plt.close()
