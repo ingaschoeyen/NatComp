@@ -6,7 +6,7 @@ from voter import *
 # TODO Create voters, candidates, run simulations, calculate and plot results, etc.
 if __name__ == "__main__":
     voters = [Voter(point, Strategy.HONEST, 1, 1) for point in get_uniform(10)]
-    candidates = [Candidate(point) for point in get_uniform(3)]
+    candidates = [Candidate(point, id) for id, point in enumerate(get_uniform(3))]
 
     threshold = 0.2
     polls = [0 for _ in range(len(candidates))] # TODO

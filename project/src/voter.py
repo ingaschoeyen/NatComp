@@ -3,17 +3,28 @@ import numpy as np
 from enum import Enum
 import random
 
-class System(Enum):
-    FPTP = 1
-    INSTANT_RUNOFF = 2
-    APPROVAL = 3
-
 class Strategy(Enum):
     RANDOM = 1 # Vote randomly
     HONEST = 2 # Vote according to personal preferences, polls have no effect
     POPULIST = 3 # Support most popular candidate, personal preferences have no effect
     REALIST = 4 # Support most popular tolerated candidate, support all tolerated if possible
     LOYAL = 5 # Support favourite candidate, support only non-threatening tolerated candidates
+
+class System(Enum):
+    FPTP = 1
+    INSTANT_RUNOFF = 2
+    APPROVAL = 3
+  
+example_voter_params = {
+    "n_candidates": 10,  # Number of candidates in the election
+    "best_preference": 0.5,  # Best ideological position for the voter
+    "worst_tolerance": 0.1,  # Worst ideological position that the voter tolerates
+    "campaign_weight": 0.1,  # Weight of the campaign message in the voter's decision
+    "poll_weight": 0.1,  # Weight of the polls in the voter's decision
+    "social_weight": 0.1,  # Weight of the social influence in the voter's decision
+}
+
+
 
 class Candidate():
 
@@ -31,18 +42,12 @@ class Candidate():
 
     def __repr__(self):
         return f"Candidate(id={self.id}, coords={self.coords}, votes={self.votes})"
+    
+    def update_position(self, populist_weight: float = 0.1):
+        self.coords[0] += populist_weight*(self.avg_voter_position[0] - self.coords[0])
+        self.coords[1] += populist_weight*(self.avg_voter_position[1] - self.coords[1])
 
-    # TODO: implement methods for campaigning, updating position, etc.
-    def update_voters(self, voters = None):
-        if self.avg_voter_position is None:
-            self.avg_voter_position = self.coords
-        else:
-            avg_x = sum(x.coords[0] for x in voters)  # Euclidean distance
-            avg_y = sum(x.coords[1] for x in voters)  # Euclidean distance
-            self.avg_voter_position = [avg_x / len(voters), avg_y / len(voters)]
 
-    def update_position(self, new_coords: list[float]):
-        self.coords = new_coords
 
 class Voter():
 
@@ -51,19 +56,22 @@ class Voter():
     best_preference : float
     worst_tolerance : float
     votes: np.ndarray  # Votes for candidates, indexed by candidate id
+    id: int = 0  # Unique identifier for the voter
 
-    def __init__(self, coords : Point, strat : Strategy, best_preference : float, worst_tolerance : float,
-                 n_candidates : int = 0, parameters: dict = None):
+    def __init__(self, coords, strat : Strategy, parameters: dict, n_candidates : int = 0, id: int = 0):
         self.coords = coords
         self.strat = strat
-        self.best_preference = best_preference
-        self.worst_tolerance = worst_tolerance
-        self.votes = np.zeros(n_candidates) # Votes for candidates, given by voting distance based on ideological position and strategy, indexed by candidate id
-        self.parameters = parameters if parameters is not None else {}
+        self.parameters = parameters if parameters is not None else example_voter_params
+        # self.votes = np.ones(n_candidates)/n_candidates # Votes for candidates, given by voting distance based on ideological position and strategy, indexed by candidate id
+        self.votes = np.zeros(n_candidates)
+        self.parameters = parameters if parameters is not None else example_voter_params
+        self.best_preference = self.parameters.get('best_preference', 0.5)  # Best ideological position for the voter
+        self.worst_tolerance = self.parameters.get('worst_tolerance', 0.1)  # Worst ideological position that the voter tolerates
+        self.id = id  # Unique identifier for the voter
 
     def update_voting_preferences(self, candidates: list[Candidate], dist_metric = distance_euclid, polls: list[float] = None, local_neighborhood: list[float] = None, campaigns: list[float] = None):
         # First Update the votes based on the distance to candidates
-        if all(self.votes == 0):
+        if all(self.votes == 0) or len(self.votes)== 0:
             self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in candidates])
             # Normalize the votes to probabilities
             self.votes = self.votes / np.sum(self.votes)
@@ -79,12 +87,13 @@ class Voter():
             # Normalize the votes to probabilities
             self.votes = self.votes / np.sum(self.votes)
 
+
     def get_voting_preferences(self):
         # honestly returns the index of the candidate with the least distance (most preferred)
         return np.argmin(self.votes)
 
     def get_tolerance(self, best_distance, worst_distance):
-        return (self.best_preference * best_distance + self.worst_tolerance * worst_distance) / 2
+        return (self.best_preference* best_distance + self.worst_tolerance * worst_distance) / 2
 
     # Tolerated candidates, might be empty
     # TODO optimization: try finding min max first, then filter, and sort last
@@ -118,7 +127,7 @@ class Voter():
                 match self.strat:
 
                     case Strategy.RANDOM:
-                        votes_counts[random.randint(0, len(candidates))] += 1
+                        votes_counts[random.randint(0, len(candidates)-1)] += 1
 
                     case Strategy.HONEST | Strategy.LOYAL:
                         votes_counts[self.get_favourite(candidates, dist_metric)] += 1
@@ -155,3 +164,5 @@ class Voter():
                         votes_counts[favourite] += 1
 
         return votes_counts
+
+
