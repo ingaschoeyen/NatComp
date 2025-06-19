@@ -1,6 +1,7 @@
 from typing import Optional
 import matplotlib.pyplot as plt
 from voting import *
+from voter import Strategy, Approach, Voter, Candidate
 
 # Max 10
 COLOURS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -13,7 +14,6 @@ def scatter_agent_points(ax : plt.Axes, voters_points : list[Point], candidates_
                          voter_colours : list[str], cand_colours : list[str]):
     voters_points = np.reshape(voters_points, (-1, 2))
     candidates_points = np.reshape(candidates_points, (-1, 2))
-    print(f"Voters points: {voters_points}")
     ax.scatter(voters_points[:, 0], voters_points[:, 1],
                c=voter_colours,
                alpha=1)
@@ -73,5 +73,50 @@ def plot_bar(votes_counts : list[int], cand_shifts : Optional[list[int]] = None,
     fig.savefig(output_path)
     plt.close()
 
+def plot_population(strategies: list[Strategy], approaches: list[Approach], output_path: str = "./population_distribution.png"):
+    # get voter strategies
+
+    plt.subplots(1, 2, figsize=(10, 6))
+    plt.subplot(1, 2, 1)
+    plt.pie([strategies.count(strat.value) for strat in Strategy],
+            labels=[strat.name for strat in Strategy],
+            autopct='%1.1f%%',
+            startangle=140,
+            colors=COLOURS[:len(Strategy)])
+    plt.subplot(1, 2, 2)
+    plt.pie([approaches.count(approach.value) for approach in Approach],
+            labels=[approach.name for approach in Approach],
+            autopct='%1.1f%%',
+            startangle=140,
+            colors=COLOURS[:len(Approach)]) 
+    plt.tight_layout()
+    plt.title('Population Distribution')
+    plt.savefig(output_path)
+
+def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation_dynamics.png"):
+    """
+    Plot the dynamics of the simulation results over time.
+    :param simulation_results: Dictionary containing simulation results with keys as round numbers and values as results.
+    :param output_path: Path to save the plot.
+    """
+
+    rounds = len(simulation_results)
+    results = [result['votes'] for result in simulation_results]
+    cand_results = np.reshape(results[:], (rounds, len(results[0])))
+    
+    vse = [result['vse'] for result in simulation_results]
+    vse = np.reshape(vse[:], (rounds, 1))
+    print(cand_results.shape, vse.shape)
+    plt.figure(figsize=(12, 6))
+    for i in range(len(results[0])):
+        plt.plot(cand_results[:, i], label=f'Candidate {i+1}', marker='o', linestyle='-')
+    plt.plot(vse, label='Voter Satisfaction Efficiency (VSE)', marker='o', linestyle='-', color='blue')
+    plt.xticks(range(rounds), [f'Round {i+1}' for i in range(rounds)])
+    plt.xlabel('Round')
+    plt.ylabel('Votes')
+    plt.title('Simulation Dynamics')
+    plt.legend()
+    plt.savefig(output_path)
+    plt.close()
 # TODO other types of plots
 # TODO plot quality (VSE) dependent on parameters of system

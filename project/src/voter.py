@@ -14,16 +14,24 @@ class System(Enum):
     FPTP = 1
     INSTANT_RUNOFF = 2
     APPROVAL = 3
-  
+
+class Approach(Enum):
+    RANDOM = 1
+    DEFENSIVE = 2
+    OFFENSIVE = 3
+
 example_voter_params = {
     "n_candidates": 10,  # Number of candidates in the election
     "best_preference": 0.5,  # Best ideological position for the voter
     "worst_tolerance": 0.1,  # Worst ideological position that the voter tolerates
-    "campaign_weight": 0.1,  # Weight of the campaign message in the voter's decision
-    "poll_weight": 0.1,  # Weight of the polls in the voter's decision
-    "social_weight": 0.1,  # Weight of the social influence in the voter's decision
+    "campaign_weight": 0.2,  # Weight of the campaign message in the voter's decision
+    "poll_weight": 0.2,  # Weight of the polls in the voter's decision
+    "social_weight": 0.2,  # Weight of the social influence in the voter's decision
 }
 
+example_candidate_params = {
+    "approach_weight": 0.2,  # Weight of the approach in the candidate's position update
+}
 
 
 class Candidate():
@@ -33,19 +41,22 @@ class Candidate():
     votes: int  # Number of votes received by this candidate
     vote_history: list[int]  # History of votes received by this candidate
 
-    def __init__(self, coords : Point, id : int= 0):
+    def __init__(self, coords : Point, id : int= 0, approach: Approach = Approach.RANDOM, params: dict = None):
         self.coords = coords
+        self.campaign_coords = coords  # Coordinates of the candidate in the space, used for campaigning
         self.id = id  # Unique identifier for the candidate
+        self.approach = approach
         self.votes = 0  # Number of votes received by this candidate
         self.vote_history = []
-        self.avg_voter_position = None  # Average position of voters who voted for this candidate
+        self.avg_voter_position = coords  # Average position of voters who voted for this candidate
+        self.approach_weight = example_candidate_params.get('approach_weight', 0.1) if params is None else params.get('approach_weight', 0.1)  # Weight of the approach in the candidate's position update
 
     def __repr__(self):
         return f"Candidate(id={self.id}, coords={self.coords}, votes={self.votes})"
     
-    def update_position(self, populist_weight: float = 0.1):
-        self.coords[0] += populist_weight*(self.avg_voter_position[0] - self.coords[0])
-        self.coords[1] += populist_weight*(self.avg_voter_position[1] - self.coords[1])
+    def update_position(self, approach_weight: float = 0.1):
+        self.campaign_coords[0] += self.approach_weight*(self.avg_voter_position[0] - self.coords[0])
+        self.campaign_coords[1] += self.approach_weight*(self.avg_voter_position[1] - self.coords[1])
 
 
 
@@ -78,10 +89,8 @@ class Voter():
         else:
             # Update votes based on strategy parameters and polls
             for i, candidate in enumerate(candidates):
-                # Calculate the distance to the candidate
-                self.votes[i] = dist_metric(self.coords, candidate.coords)
                 # adjust votes based on campaign message - adjusted position of candidate based on polls * campaign_weight
-                self.votes[i] -= self.parameters.get('campaign_weight', 0) * (dist_metric(self.coords, campaigns[i] if campaigns is not None else candidate.coords))
+                self.votes[i] -= self.parameters.get('campaign_weight', 0) * (dist_metric(self.coords, candidate.campaign_coords))
                 self.votes[i] -= self.parameters.get('poll_weight', 0) * (polls[i] if polls is not None else 0)
                 self.votes[i] -= self.parameters.get('social_weight', 0) * (local_neighborhood[i] if local_neighborhood is not None else 0)
             # Normalize the votes to probabilities

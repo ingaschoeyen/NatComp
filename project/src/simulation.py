@@ -41,11 +41,13 @@ class Simulation():
         print('results dumped')
 
     def run_election_cycles(self):
+        # set up like this so that we can run multiple simulations with different parameters and store results in one json file
         # create unique sim id
         sim_id = str(datetime.now()) + str(np.random.randint(0, 1000000))
         sim_id = sim_id.replace(" ", "_").replace(":", "-").replace(".", "-")  # replace spaces and colons with underscores and hyphens
-        
-        output = {'round': 0, 'votes': [], 'vse': 0.0}  # Initialize output structure
+        self.output_sims['sim_id'] = sim_id
+        self.output_sims['results'] = []  # Initialize results list
+        output = [{'round': 0, 'votes': [], 'vse': 0.0}]  # Initialize output structure
         
         population = self.population if self.population else Population()
         election = self.election if self.election else Election()
@@ -62,9 +64,8 @@ class Simulation():
             votes_counts, results, vse = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
             # store results
             election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
-            output.update({'round': rounds, 'votes': results, 'vse': vse})
-        self.output_sims.update({'sim_id': sim_id,
-                                    'results': output})  
+            self.output_sims.get('results').append({'round': rounds, 'votes': results, 'vse': vse})
+
 
         print("Election simulation completed.")
         self.dump_results(sim_id) 
@@ -73,5 +74,8 @@ class Simulation():
     
 if __name__ == "__main__":
         population = Population()
+        voter_strategies, candidate_approaches = population.get_strategies()
+        plot_population(voter_strategies, candidate_approaches, output_path="./population_distribution.png")
         sim = Simulation(population=population, n_rounds=10)
         sim.run_election_cycles()
+        plot_sim_dynamics(sim.output_sims.get('results'), output_path="./simulation_dynamics.png")
