@@ -47,7 +47,7 @@ class Simulation():
         sim_id = sim_id.replace(" ", "_").replace(":", "-").replace(".", "-")  # replace spaces and colons with underscores and hyphens
         self.output_sims['sim_id'] = sim_id
         self.output_sims['results'] = []  # Initialize results list
-        output = [{'round': 0, 'votes': [], 'vse': 1.0}]  # Initialize output structure
+        output = [{'round': 0, 'votes': [], 'vse_util': 1.0, 'vse_comp': 1.0, 'vse_vdist_comp': 1.0}]  # Initialize output structure
         
         population = self.population if self.population else Population()
         election = self.election if self.election else Election()
@@ -63,13 +63,13 @@ class Simulation():
                 population.update_voter_opinions(polls=polls)
 
             # do an election
-            votes_counts, results, vse = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
+            votes_counts, results, vse_util, vse_comp, vse_vdist_comp = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
             # candidates update based on election
             population.update_candidates(results)
             # store results
             if plot_results:
                 election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
-            self.output_sims.get('results').append({'round': rounds, 'votes': results, 'vse': vse})
+            self.output_sims.get('results').append({'round': rounds, 'votes': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp})
 
 
         print("Election simulation completed.")

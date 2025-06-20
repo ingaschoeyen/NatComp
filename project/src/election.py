@@ -145,7 +145,7 @@ class Election():
         score = 1 - (std_dev / mean_val)
         return max(0.0, min(1.0, score))
 
-    def vse_vdist_comp(voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
+    def vse_vdist_comp(self, voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
         assert np.isclose(sum(results), 1) # <results> must be a distribution on parties
 
         weighted_sums = []
@@ -169,8 +169,10 @@ class Election():
         polls = polls if polls is not None else [1 / len(candidates) for _ in range(len(candidates))]
         votes_counts = self.sum_votes(mytypavoters=mycoolvoters, candidates=candidates, polls=polls, system=self.system, dist_metric=dist_metric)
         results = self.percentage(votes_counts)
-        vse = self.vse_util(mycoolvoters, candidates, results, dist_metric)
-        return votes_counts, results, vse
+        vse_util = self.vse_util(mycoolvoters, candidates, results, dist_metric)
+        vse_comp = self.vse_comp(mycoolvoters, candidates, results, dist_metric)
+        vse_vdist_comp = self.vse_vdist_comp(mycoolvoters, candidates, results, dist_metric)
+        return votes_counts, results, vse_util, vse_comp, vse_vdist_comp
     
     def plot_an_election(self, voters: Population, candidates: Population, 
                          votes_counts: list[int], results: list[float], output_path: str = None, dist_metric = distance_euclid):

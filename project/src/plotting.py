@@ -106,15 +106,23 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     cand_results = np.reshape(results[:], (rounds, len(results[0])))
 
     
-    vse = [result['vse'] for result in simulation_results]
-    vse = np.reshape(vse[:], (rounds, 1))
-    print(cand_results.shape, vse.shape)
+    vse_util = [result['vse_util'] for result in simulation_results]
+    vse_util = np.reshape(vse_util[:], (rounds, 1))
+
+    vse_comp = [result['vse_comp'] for result in simulation_results]
+    vse_comp = np.reshape(vse_comp[:], (rounds, 1))
+
+    vse_vdist_comp = [result['vse_vdist_comp'] for result in simulation_results]
+    vse_vdist_comp = np.reshape(vse_vdist_comp[:], (rounds, 1))
+
     plt.subplots(2, 1, figsize=(15, 10), height_ratios=[1, 4])
     plt.subplot(2, 1, 1)
-    plt.plot(vse, label='Voter Satisfaction Efficiency (VSE)', marker='o', linestyle='-', color='blue')
+    plt.plot(vse_util, label='VSE (util)', marker='o', linestyle='-')
+    plt.plot(vse_comp, label='VSE (comp)', marker='o', linestyle='-')
+    plt.plot(vse_vdist_comp, label='VSE (vdist comp)', marker='o', linestyle='-')
     plt.xlabel('Round')
     plt.ylabel('VSE')
-    plt.title('Voter Satisfaction Efficiency Over')
+    plt.title('Voter Satisfaction Efficiency')
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
