@@ -1,5 +1,6 @@
 from typing import Optional
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from voting import *
 from voter import Strategy, Approach, Voter, Candidate
 
@@ -145,3 +146,31 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
 
 
 # TODO plot quality (VSE) dependent on parameters of system
+def make_gif_scatter(population, results: list, cand_hist: list, output_path: str = "./election.gif"):
+    """
+    Create a GIF from the election results.
+    :param population: Population of voters and candidates.
+    :param results: List of results from the election.
+    :param output_path: Path to save the GIF.
+    """ 
+    cand_shifts = [0 for _ in range(len(population.cands))] 
+    fig, ax = plt.subplots()
+    x_lim = [-1, 1]
+    y_lim = [-1, 1]
+    ax.set_xlim(x_lim)
+    ax.set_ylim(y_lim)
+    voter_points = np.reshape([voter.coords for voter in population.voters], (len(population.voters), 2))
+    def animate(n):
+        cand_points = cand_hist[n]
+        votes = results[n]['votes_count']
+        ax.scatter(voter_points[:, 0], voter_points[:, 1],
+                   c=[COLOURS[p + cand_shifts[p]] for p in votes], 
+                     alpha=1, label='Voters')
+        ax.scatter(cand_points[:, 0], cand_points[:, 1],
+                   c=[COLOURS[i + cand_shifts[i]] for i in range(len(cand_points))],
+                   s=[200 for _ in range(len(cand_points))], alpha=0.5, label='Candidates')
+        ax.set_title(f"Round {n+1}")
+
+    ani = animation.FuncAnimation(fig, animate, frames=len(results), interval=500)
+
+    ani.save(output_path, writer='pillow', fps=2)

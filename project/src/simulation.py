@@ -40,7 +40,7 @@ class Simulation():
             json.dump(self.output_sims, f)
         print('results dumped')
 
-    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True):
+    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True, make_gif: bool = False):
         # set up like this so that we can run multiple simulations with different parameters and store results in one json file
         # create unique sim id
         sim_id = str(datetime.now()) + str(np.random.randint(0, 1000000))
@@ -52,6 +52,7 @@ class Simulation():
         population = self.population if self.population else Population()
         election = self.election if self.election else Election()
         results = None
+        cand_points_hist = [cand.coords for cand in population.cands]  # Store candidate positions history
         for rounds in range(self.n_rounds):
             print(f"Running round {rounds + 1}/{self.n_rounds}")
             # Update voter and candidate positions based on last rounds results
@@ -66,13 +67,17 @@ class Simulation():
             votes_counts, results, vse_util, vse_comp, vse_vdist_comp = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
             # candidates update based on election
             population.update_candidates(results)
+            cand_points_hist.append([cand.coords for cand in population.cands])  # Store candidate positions history
             # store results
             if plot_results:
                 election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
-            self.output_sims.get('results').append({'round': rounds, 'votes': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp})
+            self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp})
 
 
         print("Election simulation completed.")
+
+        if make_gif:
+            make_gif_scatter(population, self.output_sims.get('results'), cand_points_hist, output_path=f"./election_{sim_id}.gif")
         if save_results:
             self.dump_results(sim_id) 
         else:
@@ -104,5 +109,5 @@ if __name__ == "__main__":
             voter_strategies, candidate_approaches = population.get_strategies()
             plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}.png")
             sim = Simulation(population=population, n_rounds=10)
-            output = sim.run_election_cycles(save_results=False, plot_results=False)
+            output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True)
             plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}.png")
