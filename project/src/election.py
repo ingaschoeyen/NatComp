@@ -1,5 +1,5 @@
 from population import Population
-from geometry import distance_euclid, closest_points, point_distances
+from geometry import *
 import numpy as np
 from enum import Enum
 from voter import Voter, Candidate, System
@@ -172,7 +172,8 @@ class Election():
         vse_util = self.vse_util(mycoolvoters, candidates, results, dist_metric)
         vse_comp = self.vse_comp(mycoolvoters, candidates, results, dist_metric)
         vse_vdist_comp = self.vse_vdist_comp(mycoolvoters, candidates, results, dist_metric)
-        return votes_counts, results, vse_util, vse_comp, vse_vdist_comp
+        norm_entropy = compute_norm_entropy(results)
+        return votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy
     
     def plot_an_election(self, voters: list[Voter], candidates: list[Candidate], 
                          votes_counts: list[int], results: list[float], output_path: str = None, dist_metric = distance_euclid):

@@ -17,7 +17,9 @@ example_population_params = {
     "cand_dist": "uniform",  # Distribution type for candidate positions: "uniform", "normal", "cluster", or "custom"
     "n_candidates": 10,       # Number of candidates in the election
     "voter_dist": "uniform", # Distribution type for voter positions: "uniform", "normal", "cluster", or "custom"
-    "n_voters": 200          # Number of voters in the population
+    "n_voters": 200,          # Number of voters in the population
+    "local_neighborhood": True,  # Whether to use local neighborhood for updating voter opinions
+    "neighborhood_radius": 0.2,  # Radius for the local neighborhood around
 }
 
 
@@ -196,9 +198,9 @@ class Population():
 
         for voter in self.voters:
             if self.params.get("local_neighborhood", False):
-                local_neighborhood = self.local_neighborhood(voter)
-            else:
                 local_neighborhood = None
+            else:
+                local_neighborhood = self.local_neighborhood(voter, radius=self.params.get("neighborhood_radius", 0.1))
             voter.update_voting_preferences(candidates, 
                                           dist_metric=distance_euclid, 
                                           polls=polls, 
@@ -239,6 +241,8 @@ class Population():
                 case Approach.OFFENSIVE:             
                     candidate.avg_voter_position = avg_voter_position[np.argmax(polls)] if avg_voter_position is not None else candidate.coords
                     candidate.make_campaign()
+                case Approach.HONEST:
+                    pass
 
     def update_candidates(self, results: list[float] = None):
         """
@@ -262,3 +266,6 @@ class Population():
                     case Approach.OFFENSIVE:             
                         target_location = self.cands[np.argmax(results)].coords if results is not None else candidate.coords
                         candidate.update_position(target_location)
+                    case Approach.HONEST:
+                        # Honest candidates do not change their position
+                        pass

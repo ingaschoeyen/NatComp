@@ -47,7 +47,7 @@ class Simulation():
         sim_id = sim_id.replace(" ", "_").replace(":", "-").replace(".", "-")  # replace spaces and colons with underscores and hyphens
         self.output_sims['sim_id'] = sim_id
         self.output_sims['results'] = []  # Initialize results list
-        output = [{'round': 0, 'votes': [], 'vse_util': 1.0, 'vse_comp': 1.0, 'vse_vdist_comp': 1.0}]  # Initialize output structure
+        output = [{'round': 0, 'votes': [], 'vse_util': 1.0, 'vse_comp': 1.0, 'vse_vdist_comp': 1.0, 'norm_entropy': 1.0}]  # Initialize output structure
         
         population = self.population if self.population else Population()
         election = self.election if self.election else Election()
@@ -64,14 +64,14 @@ class Simulation():
                 population.update_voter_opinions(polls=polls)
 
             # do an election
-            votes_counts, results, vse_util, vse_comp, vse_vdist_comp = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
+            votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
             # candidates update based on election
             population.update_candidates(results)
 
             # store results
             if plot_results:
                 election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
-            self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp})
+            self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp, 'norm_entropy': norm_entropy})
             if make_gif:
                 fig, frame_path = get_gif_scatter(population.voters, population.cands, polls, results, election.system, rounds, vse_util,  output_path=f"./election_round_{rounds + 1}_scatter.png")
                 fig.show()
@@ -106,11 +106,13 @@ def run_multiple_voting_systems(voting_systems: list[System], population: Popula
     
 if __name__ == "__main__":
         n_sims = 1
-
+        system = System.APPROVAL  # Example system, can be changed to any other system
+        total_output = []
         for i in range(n_sims):
             population = Population()
             voter_strategies, candidate_approaches = population.get_strategies()
-            plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}.png")
-            sim = Simulation(population=population, n_rounds=10, election=Election(system=System.APPROVAL))
+            plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}_{system.name}.png")
+            sim = Simulation(population=population, n_rounds=10, election=Election(system=system))
             output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True)
-            plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}.png")
+            plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}_{system.name}.png")
+            total_output.append(output)

@@ -19,14 +19,15 @@ class Approach(Enum):
     RANDOM = 1
     DEFENSIVE = 2
     OFFENSIVE = 3
+    HONEST = 4
 
 example_voter_params = {
     "n_candidates": 10,  # Number of candidates in the election
     "best_preference": 0.5,  # Best ideological position for the voter
     "worst_tolerance": 0.1,  # Worst ideological position that the voter tolerates
-    "campaign_weight": 0.2,  # Weight of the campaign message in the voter's decision
+    "campaign_weight": 0.4,  # Weight of the campaign message in the voter's decision
     "poll_weight": 0.2,  # Weight of the polls in the voter's decision
-    "social_weight": 0.2,  # Weight of the social influence in the voter's decision
+    "social_weight": 0.6,  # Weight of the social influence in the voter's decision
 }
 
 example_candidate_params = {
@@ -88,7 +89,7 @@ class Voter():
 
     def update_voting_preferences(self, candidates: list[Candidate], dist_metric = distance_euclid, polls: list[float] = None, local_neighborhood: list[float] = None, campaigns: list[float] = None):
         # First Update the votes based on the distance to candidates
-        if all(self.votes == 0) or len(self.votes)== 0:
+        if all(self.votes == 0) or len(self.votes) == 0:
             self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in candidates])
             # Normalize the votes to probabilities
             self.votes = self.votes / np.sum(self.votes)

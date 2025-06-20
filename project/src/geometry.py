@@ -35,3 +35,12 @@ def radius_relative(base_point : list[Point], goal_points : list[Point], closest
     return (closest * closest_w + furthest * furthest_w) / 2
 
 
+def compute_norm_entropy(results: list[float]):
+    M = len(results)
+    if M == 0:
+        return 0.0
+    norm_entropy = 0.0
+    for result in results:
+        norm_entropy += result * np.log(result) if result > 0 else 0
+    norm_entropy = -norm_entropy / np.log(M)
+    return norm_entropy

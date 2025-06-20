@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import imageio as iio
 from voting import *
 from voter import Strategy, Approach, Voter, Candidate
-
+import os
 # Max 10
 COLOURS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
@@ -146,7 +146,7 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
 
 def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: list[float], results: list[float], system: System, cur_round, vse_util, output_path: str = "./election_gif_frame.png"):
    
-    max_radius = 5 # radius of the max size of candidates to multiply by results
+    max_radius = 500 # radius of the max size of candidates to multiply by results
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     plt.subplot(1, 2, 1)
 
@@ -158,14 +158,13 @@ def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: lis
     cands_points = np.reshape(cands_points, (-1, 2))  
     voter_colours = [COLOURS[np.argmax(voter.get_votes(candidates, polls=polls, system=system, dist_metric=distance_euclid))] for voter in voters]
     cand_colours = [COLOURS[i] for i in range(len(candidates))]
-    cand_sizes = [max_radius * result for result in results]    
 
     ax[0].scatter(voters_points[:, 0], voters_points[:, 1],
                c=voter_colours,
                alpha=1, label=[voter.strat.name for voter in voters])
     ax[0].scatter(cands_points[:,0], cands_points[:,1],
                c=cand_colours,
-               s=[200*cand_sizes[i] for i in range(len(cands_points))],
+               s=[max_radius * result for result in results],
                alpha=0.5, label=[cand.approach.name for cand in candidates])
     ax[0].set_aspect('equal', adjustable='box')
     ax[0].text(-0.3, 1.15, f"VSE (util): {round(vse_util, 2)}", transform=ax[0].transAxes, fontsize=12, verticalalignment='top')
@@ -175,12 +174,18 @@ def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: lis
     ax[1].set_xlabel('Candidates')
     ax[1].set_ylabel('Vote Share')
     fig.suptitle(f"Round {cur_round} - {system.name} System")
+    fig.tight_layout()
     fig.savefig(output_path)
+    plt.close(fig)
     return fig, output_path  # Return the path to the saved image for GIF creation
 
 # TODO plot quality (VSE) dependent on parameters of system
-def make_gif_scatter(frames, output_path: str = "./election.gif"):
+def make_gif_scatter(frames, output_path: str = "./election.gif", delete_frames: bool = True):
     gif_ims = []
     for frame in frames:
         gif_ims.append(iio.imread(frame))
-    iio.mimsave(output_path, gif_ims, loop=3)
+    iio.mimsave(output_path, gif_ims)
+    if delete_frames:
+        for gif_im in frames:
+            # delete the frame file
+            os.remove(gif_im)
