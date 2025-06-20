@@ -1,3 +1,4 @@
+from typing import Optional
 from geometry import *
 import numpy as np
 from enum import Enum
@@ -54,13 +55,13 @@ class Candidate():
 
     def __repr__(self):
         return f"Candidate(id={self.id}, coords={self.coords}, votes={self.votes})"
-    
+
 
     def update_position(self, target_position: list[float], approach_weight: float = 0.1):
         self.coords[0] += self.approach_weight*(target_position[0] - self.coords[0])
         self.coords[1] += self.approach_weight*(target_position[1] - self.coords[1])
-        self.coords = np.clip(self.campaign_coords, 0, 1) 
-    
+        self.coords = np.clip(self.campaign_coords, 0, 1)
+
     def make_campaign(self, approach_weight: float = 0.1):
         self.campaign_coords[0] += self.approach_weight*(self.avg_voter_position[0] - self.campaign_coords[0])
         self.campaign_coords[1] += self.approach_weight*(self.avg_voter_position[1] - self.campaign_coords[1])
@@ -87,28 +88,30 @@ class Voter():
         self.worst_tolerance = self.parameters.get('worst_tolerance', 0.1)  # Worst ideological position that the voter tolerates
         self.id = id  # Unique identifier for the voter
 
-    def update_voting_preferences(self, candidates: list[Candidate], dist_metric = distance_euclid, polls: list[float] = None, local_neighborhood: list[float] = None, campaigns: list[float] = None):
+    def update_voting_preferences(self, candidates: list[Candidate], system: System, dist_metric = distance_euclid, polls: list[float] = None, local_neighborhood: list[float] = None, campaigns: list[float] = None):
+        self.votes = self.get_votes(candidates, system, polls, dist_metric)
+        
         # First Update the votes based on the distance to candidates
-        if all(self.votes == 0) or len(self.votes) == 0:
-            self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in np.random.permutation(candidates)])
-            # Normalize the votes to probabilities
-            self.votes = self.votes / np.sum(self.votes)
-        else:
-            # Update votes based on strategy parameters and polls
-            for candidate in np.random.permutation(candidates):
-                self.votes[candidate.id] = dist_metric(self.coords, candidate.coords)  # Distance to candidate's position
-                # adjust votes based on campaign message - adjusted position of candidate based on polls * campaign_weight
-                self.votes[candidate.id] -= self.parameters.get('campaign_weight', 0) * 1/ (dist_metric(self.coords, candidate.campaign_coords))
-                self.votes[candidate.id] -= self.parameters.get('poll_weight', 0) * (polls[candidate.id] if polls is not None else 0)
-                self.votes[candidate.id] -= self.parameters.get('social_weight', 0) * (local_neighborhood[candidate.id] if local_neighborhood is not None else 0)
-                self.votes[candidate.id] = max(self.votes[candidate.id], 0)  # Ensure votes are non-negative
-            # Normalize the votes to probabilities
-            self.votes = self.votes / np.sum(self.votes)
+        # if all(self.votes == 0) or len(self.votes) == 0:
+        #     self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in np.random.permutation(candidates)])
+        #     # Normalize the votes to probabilities
+        #     self.votes = self.votes / np.sum(self.votes)
+        # else:
+        #     # Update votes based on strategy parameters and polls
+        #     for candidate in np.random.permutation(candidates):
+        #         self.votes[candidate.id] = dist_metric(self.coords, candidate.coords)  # Distance to candidate's position
+        #         # adjust votes based on campaign message - adjusted position of candidate based on polls * campaign_weight
+        #         self.votes[candidate.id] -= self.parameters.get('campaign_weight', 0) * 1/ (dist_metric(self.coords, candidate.campaign_coords))
+        #         self.votes[candidate.id] -= self.parameters.get('poll_weight', 0) * (polls[candidate.id] if polls is not None else 0)
+        #         self.votes[candidate.id] -= self.parameters.get('social_weight', 0) * (local_neighborhood[candidate.id] if local_neighborhood is not None else 0)
+        #         self.votes[candidate.id] = max(self.votes[candidate.id], 0)  # Ensure votes are non-negative
+        #     # Normalize the votes to probabilities
+        #     self.votes = self.votes / np.sum(self.votes)
 
 
-    def get_voting_preferences(self):
-        # honestly returns the index of the candidate with the least distance (most preferred)
-        return np.argmin(self.votes)
+    # def get_voting_preferences(self):
+    #     # honestly returns the index of the candidate with the least distance (most preferred)
+    #     return np.argmin(self.votes)
 
     def get_tolerance(self, best_distance, worst_distance):
         return (self.best_preference* best_distance + self.worst_tolerance * worst_distance) / 2
@@ -134,8 +137,15 @@ class Voter():
         cand_points = [cand.coords for cand in candidates]
         return np.argmin(point_distances(self.coords, cand_points, dist_metric))
 
-    def get_votes(self, candidates : list[Candidate], polls : list[float], system : System, dist_metric = distance_euclid):
-        assert len(candidates) == len(polls)
+    def get_votes(self, candidates : list[Candidate], system : System, polls : Optional[list[float]] = None, dist_metric = distance_euclid):
+        init_strat = self.strat
+
+        if polls is not None:
+            assert len(candidates) == len(polls)
+        # If no previous polls exist, ask for honest (or random) opinion
+        elif self.strat not in {Strategy.RANDOM, Strategy.HONEST}:
+            self.strat = Strategy.HONEST
+
         votes_counts = [0 for _ in range(len(candidates))]
 
         match system:
@@ -180,6 +190,10 @@ class Voter():
                             if polls[cand] < polls[favourite]:
                                 votes_counts[cand] += 1
                         votes_counts[favourite] += 1
+
+        # Restore initial strategy
+        if polls is None:
+            self.strat = init_strat
 
         return votes_counts
 
