@@ -146,7 +146,7 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
 
 def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: list[float], results: list[float], system: System, cur_round, vse_util, output_path: str = "./election_gif_frame.png"):
    
-    max_radius = 500 # radius of the max size of candidates to multiply by results
+    max_radius = 1000 # radius of the max size of candidates to multiply by results
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     plt.subplot(1, 2, 1)
 

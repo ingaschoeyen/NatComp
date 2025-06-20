@@ -90,17 +90,17 @@ class Voter():
     def update_voting_preferences(self, candidates: list[Candidate], dist_metric = distance_euclid, polls: list[float] = None, local_neighborhood: list[float] = None, campaigns: list[float] = None):
         # First Update the votes based on the distance to candidates
         if all(self.votes == 0) or len(self.votes) == 0:
-            self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in candidates])
+            self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in np.random.permutation(candidates)])
             # Normalize the votes to probabilities
             self.votes = self.votes / np.sum(self.votes)
         else:
             # Update votes based on strategy parameters and polls
-            for i, candidate in enumerate(candidates):
+            for candidate in np.random.permutation(candidates):
                 # adjust votes based on campaign message - adjusted position of candidate based on polls * campaign_weight
-                self.votes[i] -= self.parameters.get('campaign_weight', 0) * 1/ (dist_metric(self.coords, candidate.campaign_coords))
-                self.votes[i] -= self.parameters.get('poll_weight', 0) * (polls[i] if polls is not None else 0)
-                self.votes[i] -= self.parameters.get('social_weight', 0) * (local_neighborhood[i] if local_neighborhood is not None else 0)
-                self.votes[i] = max(self.votes[i], 0)  # Ensure votes are non-negative
+                self.votes[candidate.id] -= self.parameters.get('campaign_weight', 0) * 1/ (dist_metric(self.coords, candidate.campaign_coords))
+                self.votes[candidate.id] -= self.parameters.get('poll_weight', 0) * (polls[candidate.id] if polls is not None else 0)
+                self.votes[candidate.id] -= self.parameters.get('social_weight', 0) * (local_neighborhood[candidate.id] if local_neighborhood is not None else 0)
+                self.votes[candidate.id] = max(self.votes[candidate.id], 0)  # Ensure votes are non-negative
             # Normalize the votes to probabilities
             self.votes = self.votes / np.sum(self.votes)
 

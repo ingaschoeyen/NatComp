@@ -9,7 +9,7 @@ example_population_params = {
     "campaign_weight": 0.5,  # Weight of the campaign message in the voter's decision
     "poll_weight": 0.3,      # Weight of the polls in the voter's decision
     "social_weight": 0.2,    # Weight of the social influence in the voter's decision
-    "threshold": 0.1,        # Threshold for the minimum percentage of votes required for a candidate to be considered
+    "threshold": 0.05,        # Threshold for the minimum percentage of votes required for a candidate to be considered
     "dimension": 2,          # Dimension of the space in which voters and candidates are located
     "low": -1,               # Lower bound for the uniform distribution of voter positions
     "high": 1,               # Upper bound for the uniform distribution of voter positions
@@ -39,27 +39,6 @@ class Population():
         voter_strategies = [voter.strat.value for voter in self.voters]
         cand_approaches = [cand.approach.value for cand in self.cands]
         return voter_strategies, cand_approaches
-
-    # Uniform distribution
-    def init_uniform(self, n: int, dimension: int = 2, low: int = -1, high: int = 1):
-        self.voters = [[np.random.uniform(low, high) for _ in range(dimension)] for _ in range(n)]
-
-    # Normal (Gaussian) distribution
-    def init_normal(self, n: int, dimension: int = 2, mu: float = 0, sigma: float = 1):
-        self.voters = [[np.random.normal(mu, sigma) for _ in range(dimension)] for _ in range(n)]
-
-    # TODO Cluster distribution
-    # Generate the population in a number of clusters which are similar (close)
-    # Simulates how parties (clusters) are composed of similarly thinking, but distinct, candidates (points),
-    # or how the voters are divided into similarly thinking groups
-    def init_cluster(self, n: int, dimension: int = 2):
-        pass
-
-    # TODO Custom initial setups based on available data
-    def init_custom(self, voters: list[Voter] = None, candidates: list[Candidate] = None):
-        self.voters = voters if voters is not None else []
-        self.cands = candidates if candidates is not None else []
-        pass
 
     def init_canidates(self, params: dict = None):
         if params is None:
