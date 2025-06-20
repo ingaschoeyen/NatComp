@@ -1,6 +1,6 @@
 from typing import Optional
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+import imageio as iio
 from voting import *
 from voter import Strategy, Approach, Voter, Candidate
 
@@ -103,7 +103,7 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     """
 
     rounds = len(simulation_results)
-    results = [result['votes'] for result in simulation_results]
+    results = [result['votes_per'] for result in simulation_results]
     cand_results = np.reshape(results[:], (rounds, len(results[0])))
 
     
@@ -144,33 +144,43 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     plt.close()
 # TODO other types of plots
 
+def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: list[float], results: list[float], system: System, cur_round, vse_util, output_path: str = "./election_gif_frame.png"):
+   
+    max_radius = 5 # radius of the max size of candidates to multiply by results
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+
+    ax[0].set_xlim(-1.1, 1.1)
+    ax[0].set_ylim(-1.1, 1.1)
+    voters_points = [voter.coords for voter in voters]
+    cands_points = [cand.coords for cand in candidates]
+    voters_points = np.reshape(voters_points, (-1, 2))
+    cands_points = np.reshape(cands_points, (-1, 2))  
+    voter_colours = [COLOURS[np.argmax(voter.get_votes(candidates, polls=polls, system=system, dist_metric=distance_euclid))] for voter in voters]
+    cand_colours = [COLOURS[i] for i in range(len(candidates))]
+    cand_sizes = [max_radius * result for result in results]    
+
+    ax[0].scatter(voters_points[:, 0], voters_points[:, 1],
+               c=voter_colours,
+               alpha=1, label=[voter.strat.name for voter in voters])
+    ax[0].scatter(cands_points[:,0], cands_points[:,1],
+               c=cand_colours,
+               s=[200*cand_sizes[i] for i in range(len(cands_points))],
+               alpha=0.5, label=[cand.approach.name for cand in candidates])
+    ax[0].set_aspect('equal', adjustable='box')
+    ax[0].text(-0.3, 1.15, f"VSE (util): {round(vse_util, 2)}", transform=ax[0].transAxes, fontsize=12, verticalalignment='top')
+    
+    plt.subplot(1, 2, 2)
+    ax[1].bar(x=CAND_NAMES[:len(candidates)], height=results, color=cand_colours)
+    ax[1].set_xlabel('Candidates')
+    ax[1].set_ylabel('Vote Share')
+    fig.suptitle(f"Round {cur_round} - {system.name} System")
+    fig.savefig(output_path)
+    return fig, output_path  # Return the path to the saved image for GIF creation
 
 # TODO plot quality (VSE) dependent on parameters of system
-def make_gif_scatter(population, results: list, cand_hist: list, output_path: str = "./election.gif"):
-    """
-    Create a GIF from the election results.
-    :param population: Population of voters and candidates.
-    :param results: List of results from the election.
-    :param output_path: Path to save the GIF.
-    """ 
-    cand_shifts = [0 for _ in range(len(population.cands))] 
-    fig, ax = plt.subplots()
-    x_lim = [-1, 1]
-    y_lim = [-1, 1]
-    ax.set_xlim(x_lim)
-    ax.set_ylim(y_lim)
-    voter_points = np.reshape([voter.coords for voter in population.voters], (len(population.voters), 2))
-    def animate(n):
-        cand_points = cand_hist[n]
-        votes = results[n]['votes_count']
-        ax.scatter(voter_points[:, 0], voter_points[:, 1],
-                   c=[COLOURS[p + cand_shifts[p]] for p in votes], 
-                     alpha=1, label='Voters')
-        ax.scatter(cand_points[:, 0], cand_points[:, 1],
-                   c=[COLOURS[i + cand_shifts[i]] for i in range(len(cand_points))],
-                   s=[200 for _ in range(len(cand_points))], alpha=0.5, label='Candidates')
-        ax.set_title(f"Round {n+1}")
-
-    ani = animation.FuncAnimation(fig, animate, frames=len(results), interval=500)
-
-    ani.save(output_path, writer='pillow', fps=2)
+def make_gif_scatter(frames, output_path: str = "./election.gif"):
+    gif_ims = []
+    for frame in frames:
+        gif_ims.append(iio.imread(frame))
+    iio.mimsave(output_path, gif_ims, loop=3)

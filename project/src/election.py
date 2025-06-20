@@ -17,9 +17,9 @@ example_election_params = {
 
 class Election():
 
-    def __init__(self, params: dict = example_election_params):
+    def __init__(self, params: dict = example_election_params, system: System = System.FPTP):
         self.params = params
-        self.system = params.get("election_type", System.FPTP)
+        self.system = system
         
 
     def trunc_votes(self, vote_counts : list[int], vote_sum : int, threshold : float):
@@ -174,7 +174,7 @@ class Election():
         vse_vdist_comp = self.vse_vdist_comp(mycoolvoters, candidates, results, dist_metric)
         return votes_counts, results, vse_util, vse_comp, vse_vdist_comp
     
-    def plot_an_election(self, voters: Population, candidates: Population, 
+    def plot_an_election(self, voters: list[Voter], candidates: list[Candidate], 
                          votes_counts: list[int], results: list[float], output_path: str = None, dist_metric = distance_euclid):
         if output_path is None:
             output_path = f"./election_{self.system.name.lower()}.png"

@@ -30,7 +30,7 @@ example_voter_params = {
 }
 
 example_candidate_params = {
-    "approach_weight": 0.2,  # Weight of the approach in the candidate's position update
+    "approach_weight": 0.005,  # Weight of the approach in the candidate's position update
 }
 
 
