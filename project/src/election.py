@@ -20,7 +20,7 @@ class Election():
     def __init__(self, params: dict = example_election_params, system: System = System.FPTP):
         self.params = params
         self.system = system
-        
+
 
     def trunc_votes(self, vote_counts : list[int], vote_sum : int, threshold : float):
         return [votes if votes / vote_sum >= threshold else 0 for votes in vote_counts]
@@ -31,7 +31,7 @@ class Election():
         votes_counts = [0 for _ in range(len(candidates))]
 
         for voter in mytypavoters:
-            for i, vote in enumerate(voter.get_votes(candidates, polls, system, dist_metric)):
+            for i, vote in enumerate(voter.get_votes(candidates, system, polls, dist_metric)):
                 votes_counts[i] += vote
 
         return votes_counts
@@ -99,7 +99,6 @@ class Election():
 
     # TODO approval with a set amount of votes, but able to elect one candidate more than once?
     # would be the same as weighted voting with sum of weights equal to 1
-            
 
     def percentage(self, votes_counts : list[int]):
         vote_sum = sum(votes_counts)
@@ -164,9 +163,8 @@ class Election():
 
         uniformity_score = 1 - (std_dev / mean_val)
         return max(0.0, min(1.0, uniformity_score))
-    
+
     def do_an_election(self, mycoolvoters, candidates, polls: list[float] = None, dist_metric = distance_euclid):
-        polls = polls if polls is not None else [1 / len(candidates) for _ in range(len(candidates))]
         votes_counts = self.sum_votes(mytypavoters=mycoolvoters, candidates=candidates, polls=polls, system=self.system, dist_metric=dist_metric)
         results = self.percentage(votes_counts)
         vse_util = self.vse_util(mycoolvoters, candidates, results, dist_metric)
@@ -174,8 +172,8 @@ class Election():
         vse_vdist_comp = self.vse_vdist_comp(mycoolvoters, candidates, results, dist_metric)
         norm_entropy = compute_norm_entropy(results)
         return votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy
-    
-    def plot_an_election(self, voters: list[Voter], candidates: list[Candidate], 
+
+    def plot_an_election(self, voters: list[Voter], candidates: list[Candidate],
                          votes_counts: list[int], results: list[float], output_path: str = None, dist_metric = distance_euclid):
         if output_path is None:
             output_path = f"./election_{self.system.name.lower()}.png"
@@ -184,4 +182,4 @@ class Election():
         plot_pie(votes_counts, output_path=output_path.replace(".png", "_pie.png"))
         plot_approved(voters, candidates, output_path=output_path.replace(".png", "_approved.png"))
         return output_path
-    
+

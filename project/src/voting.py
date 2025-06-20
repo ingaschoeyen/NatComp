@@ -4,10 +4,6 @@ import math
 from voter import Voter, Candidate, System
 
 
-# TODO get polling results
-def get_polls(voters : list[Voter], candidates : list[Candidate], prev_polls : list[float], system : System):
-    pass
-
 def trunc_votes(vote_counts : list[int], vote_sum : int, threshold : float):
     return [votes if votes / vote_sum >= threshold else 0 for votes in vote_counts]
 

@@ -1,7 +1,8 @@
+from typing import Optional
 import numpy as np
 from geometry import *
 import math
-from voter import Voter, Candidate, Strategy, Approach
+from voter import Voter, Candidate, Strategy, Approach, System
 import pandas as pd
 
 
@@ -20,11 +21,11 @@ example_population_params = {
     "n_voters": 200,          # Number of voters in the population
     "local_neighborhood": True,  # Whether to use local neighborhood for updating voter opinions
     "neighborhood_radius": 0.2,  # Radius for the local neighborhood around
+    "per_polls": 0.1         # Percentage of the subsample size when polling
 }
 
 
 class Population():
-
 
     def __init__(self, params: dict = None, voters: list[Voter] = None, candidates: list[Candidate] = None):
         self.params = params if params is not None else example_population_params
@@ -128,47 +129,58 @@ class Population():
             "candidate_id": [cand.id for cand in self.cands],
             "candidate_coords": [cand.coords for cand in self.cands],
             "avg_voter_position": [cand.avg_voter_position for cand in self.cands]
-            }) 
+            })
 
-    def polls(self, candidates: list[Candidate] = None):
+    def take_poll(self, system: System, last_poll: Optional[list[float]] = None, candidates: list[Candidate] = None):
         """
         Returns a list of percentages of votes sampled from a subset of the population, where each percentage corresponds to a candidate.
         """
 
         if candidates is None:
-            try: 
+            try:
                 candidates = self.cands
             except AttributeError:
                 raise ValueError("No candidates provided and no candidates initialized in the population.")
 
-        per_polls = self.params.get("per_polls", 0.2)
-        n_polls = int(len(self.voters) * per_polls)
+        per_polls = self.params.get("per_polls", 0.1)
+        subsample_size = int(len(self.voters) * per_polls)
 
         # sample voters for polls
-        sampled_voters = np.random.choice(self.voters, n_polls, replace=False)
+        sampled_voters = np.random.choice(self.voters, subsample_size, replace=False)
         # Count votes for each candidate
         vote_counts = [0 for _ in range(len(self.cands))]
         avg_voter_position = [(0, 0) for _ in range(len(self.cands))]  # Initialize average voter positions for candidates
         for voter in sampled_voters:
-            # Find the closest candidate to the voter
 
-            top_candidate_index = voter.get_voting_preferences()
+            # Find the closest candidate to the voter
+            # top_candidate_index = voter.get_voting_preferences()
             # Increment the vote count for the top candidate
-            vote_counts[top_candidate_index] += 1
-            avg_voter_position[top_candidate_index] = (
-                avg_voter_position[top_candidate_index][0] + voter.coords[0][0],
-                avg_voter_position[top_candidate_index][1] + voter.coords[0][1]
-            )
+            # vote_counts[top_candidate_index] += 1
+
+            votes = voter.get_votes(candidates, system, last_poll)
+
+            for cand, cand_votes in enumerate(votes):
+                vote_counts[cand] += votes[cand]
+
+                if cand_votes > 0:
+                    avg_voter_position[cand] = (
+                        avg_voter_position[cand][0] + voter.coords[0][0],
+                        avg_voter_position[cand][1] + voter.coords[0][1]
+                    )
+
         # Normalize vote counts to percentages
-        polls = [votes / n_polls for votes in vote_counts]
+        distributed_votes = sum(vote_counts)
+        polls = [votes / distributed_votes for votes in vote_counts]
         # Calculate average voter position for each candidate
+        # TODO some voting systems may allow more votes for one candidate from one voter,
+        # so this would not be the average position
         avg_voter_position = [
             (avg[0] / vote_counts[i] if vote_counts[i] > 0 else 0,
              avg[1] / vote_counts[i] if vote_counts[i] > 0 else 0)
             for i, avg in enumerate(avg_voter_position)
         ]
-        return polls, avg_voter_position    
-    
+        return polls, avg_voter_position
+
     def local_neighborhood(self, voter: Voter, radius: float = 0.1):
         """
         Returns a list of percentages of votes from the local neighborhood of the voter,
@@ -182,8 +194,8 @@ class Population():
                 neighborhood_votes[top_candidate_index] += 1
         total_votes = sum(neighborhood_votes)
         return [votes / total_votes if total_votes > 0 else 0 for votes in neighborhood_votes]
-    
-    def update_voter_opinions(self, polls=None, candidates: list[Candidate] = None, distance_euclid=distance_euclid):
+
+    def update_voter_opinions(self, system: System, polls=None, candidates: list[Candidate] = None,  distance_euclid=distance_euclid):
         """
         Updates the voters' voting preferences based on the current candidates and polls.
         If polls are provided, they are used to adjust the voters' preferences.
@@ -201,19 +213,22 @@ class Population():
                 local_neighborhood = None
             else:
                 local_neighborhood = self.local_neighborhood(voter, radius=self.params.get("neighborhood_radius", 0.1))
-            voter.update_voting_preferences(candidates, 
-                                          dist_metric=distance_euclid, 
-                                          polls=polls, 
-                                          local_neighborhood=local_neighborhood, 
+            voter.update_voting_preferences(candidates,
+                                          system=system,
+                                          dist_metric=distance_euclid,
+                                          polls=polls,
+                                          local_neighborhood=local_neighborhood,
                                           campaigns=[cand.coords for cand in self.cands])
-    
-    def update_voters(self):
+
+    # TODO this is the same as update_voter_opinions?
+    def update_voters(self, system: System):
         gov_candidates = [self.cands[i] for i in self.elected_candidates]
         for voter in self.voters:
-            voter.update_voting_preferences(gov_candidates, 
-                                          dist_metric=distance_euclid, 
-                                          polls=None, 
-                                          local_neighborhood=None, 
+            voter.update_voting_preferences(gov_candidates,
+                                            system=system,
+                                          dist_metric=distance_euclid,
+                                          polls=None,
+                                          local_neighborhood=None,
                                           campaigns=[cand.coords for cand in gov_candidates])
 
     # TODO (*Complete*) Update the candidates based on voters' preferences and campaigns
@@ -238,7 +253,7 @@ class Population():
                 case Approach.DEFENSIVE:
                     candidate.avg_voter_position = avg_voter_position[candidate.id] if avg_voter_position is not None else candidate.coords
                     candidate.make_campaign()
-                case Approach.OFFENSIVE:             
+                case Approach.OFFENSIVE:
                     candidate.avg_voter_position = avg_voter_position[np.argmax(polls)] if avg_voter_position is not None else candidate.coords
                     candidate.make_campaign()
                 case Approach.HONEST:
@@ -249,7 +264,7 @@ class Population():
         Simulates campaigning by candidates, which can include adjusting their positions based on the average voter position.
         This can be implemented as a separate method or integrated into the update_candidates method.
         """
-       
+
         if results is None:
             pass
         else:
@@ -263,7 +278,7 @@ class Population():
                         candidate.coords[1] += np.random.uniform(-0.1, 0.1)
                     case Approach.DEFENSIVE:
                         candidate.coords = candidate.campaign_coords
-                    case Approach.OFFENSIVE:             
+                    case Approach.OFFENSIVE:
                         target_location = self.cands[np.argmax(results)].coords if results is not None else candidate.coords
                         candidate.update_position(target_location)
                     case Approach.HONEST:
