@@ -49,25 +49,28 @@ class Simulation():
         self.output_sims['sim_id'] = sim_id
         self.output_sims['results'] = []  # Initialize results list
         output = [{'round': 0, 'votes': [], 'vse_util': 1.0, 'vse_comp': 1.0, 'vse_vdist_comp': 1.0, 'norm_entropy': 1.0}]  # Initialize output structure
-        
+
         population = self.population if self.population else Population()
         election = self.election if self.election else Election()
         results = None
         gif_frames = []  # Store frames for GIF if needed
+        # TODO reset polls between election rounds?
+        polls = None # Initially no previous polls, let everyone vote honestly/randomly
+
         for rounds in range(self.n_rounds):
             print(f"Running round {rounds + 1}/{self.n_rounds}")
             # Update voter and candidate positions based on last rounds results
 
-            population.update_voters()
+            population.update_voters(election.system)
             for i in range(self.n_polls):
-                polls, avg_voter_pos = population.polls()
+                polls, avg_voter_pos = population.take_poll(election.system, polls)
                 population.campaign(avg_voter_position=avg_voter_pos, polls=polls)
-                population.update_voter_opinions(polls=polls)
+                population.update_voter_opinions(system=election.system, polls=polls)
 
             # do an election
             votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
             # candidates update based on election
-            population.update_candidates(results)
+            population.update_candidates(results) # TODO this is essentially the same as population.campaign
 
             # store results
             if plot_results:
@@ -83,7 +86,7 @@ class Simulation():
         if make_gif:
             make_gif_scatter(gif_frames, output_path=f"./election_{sim_id}.gif")
         if save_results:
-            self.dump_results(sim_id) 
+            self.dump_results(sim_id)
         else:
             return self.output_sims
 
@@ -103,8 +106,8 @@ def run_multiple_voting_systems(voting_systems: list[System], population: Popula
         sim.run_election_cycles()
         print(f"Simulation for {system.name} completed.")
 
-       
-    
+
+
 if __name__ == "__main__":
         n_sims = 10
         n_rounds = 30
