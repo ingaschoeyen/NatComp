@@ -1,4 +1,5 @@
-from voter import *
+from typing import Any, Dict
+from agents import *
 from population import *
 from plotting import *
 from election import Election
@@ -11,11 +12,10 @@ import copy
 """Simulation class to run the election simulation with (potentially multiple) populations of voters and candidates."""
 
 
-example_params = {
-    'n_rounds': 10,
-    'n_polls': 5,
-
-    }
+default_sim_params = {
+    "n_rounds": 10,
+    "n_polls": 5
+}
 
 class Simulation():
 
@@ -23,12 +23,11 @@ class Simulation():
     candidates: list[Population]
     output_sims: dict # DataFrame to store the results of each round
 
-
-    def __init__(self, population: Population = None, election: Election = None, n_rounds: int = 10, n_polls: int = 5):
-        self.population = population if population else Population()
-        self.election = election if election else Election()
-        self.n_rounds = n_rounds
-        self.n_polls = n_polls
+    def __init__(self, population: Population, params : Dict[str, Any] = default_sim_params):
+        self.population = population
+        self.election = Election(population=population, params=params)
+        self.n_rounds = params.get('n_rounds', default_sim_params['n_rounds'])
+        self.n_polls = params.get('n_polls', default_sim_params['n_polls'])
         self.output_sims = dict() # {sim_id, sim_results}
         print(f"Simulation initialized with {self.n_rounds} rounds and {self.n_polls} polls per round.")
 
@@ -50,8 +49,8 @@ class Simulation():
         self.output_sims['results'] = []  # Initialize results list
         output = [{'round': 0, 'votes': [], 'vse_util': 1.0, 'vse_comp': 1.0, 'vse_vdist_comp': 1.0, 'norm_entropy': 1.0}]  # Initialize output structure
 
-        population = self.population if self.population else Population()
-        election = self.election if self.election else Election()
+        population = self.population
+        election = self.election
         results = None
         gif_frames = []  # Store frames for GIF if needed
         # TODO reset polls between election rounds?
@@ -63,40 +62,34 @@ class Simulation():
 
             population.update_voters(election.system)
             for i in range(self.n_polls):
-                polls, avg_voter_pos = population.take_poll(election.system, polls)
+                polls, avg_voter_pos = population.take_poll(system=election.system, last_poll=polls)
                 population.campaign(avg_voter_position=avg_voter_pos, polls=polls)
-                population.update_voter_opinions(system=election.system, polls=polls)
+                population.update_voters(system=election.system, polls=polls)
 
-            # do an election
-            votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
+            # run election
+            votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy = election.run_election(polls=polls)
             # candidates update based on election
             population.update_candidates(results) # TODO this is essentially the same as population.campaign
 
             # store results
             if plot_results:
-                election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
+                election.plot_election(population.voters, population.candidates, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
             self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp, 'norm_entropy': norm_entropy})
             if make_gif:
-                fig, frame_path = get_gif_scatter(population.voters, population.cands, polls, results, election.system, rounds, vse_util, output_path=f"./election_round_{rounds + 1}_scatter.png")
+                fig, frame_path = get_gif_scatter(population.voters, population.candidates, polls, results, election.system, rounds, vse_util, output_path=f"./election_round_{rounds + 1}_scatter.png")
                 fig.show()
                 gif_frames.append(frame_path)
 
         print("Election simulation completed.")
 
         if make_gif:
-<<<<<<< HEAD
-            make_gif_scatter(gif_frames, output_path=f"./gifs/election_{sim_id}.gif")
-=======
             make_gif_scatter(gif_frames, output_path=f"./election_{sim_id}.gif", delete_frames=delete_frames)
->>>>>>> 42fbd5a (add poll and voter strategy to plots)
         if save_results:
             self.dump_results(sim_id)
         else:
             return self.output_sims
 
-
-
-def run_multiple_voting_systems(voting_systems: list[System], population: Population, n_rounds: int = 10, n_polls: int = 5):
+def run_multiple_voting_systems(voting_systems: list[System], population: Population, params : Dict[str, Any] = default_sim_params):
     """
     Run the election simulation for multiple voting systems.
     :param voting_systems: List of voting systems to simulate.
@@ -106,37 +99,6 @@ def run_multiple_voting_systems(voting_systems: list[System], population: Popula
     """
     for system in voting_systems:
         print(f"Running simulation for {system.name} voting system.")
-        sim = Simulation(population=copy.copy(population), election=Election(system=system))
+        sim = Simulation(population=population.deepcopy(), election=Election(population=population, params=params))
         sim.run_election_cycles()
         print(f"Simulation for {system.name} completed.")
-
-
-
-if __name__ == "__main__":
-<<<<<<< HEAD
-        n_sims = 10
-        n_rounds = 30
-        system = System.APPROVAL  # Example system, can be changed to any other system
-        total_output = []
-        population = Population()
-        voter_strategies, candidate_approaches = population.get_strategies()
-        plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_{system.name}.png")
-         
-        for i in range(n_sims):
-            sim = Simulation(population=copy.copy(population), n_rounds=n_rounds, election=Election(system=system))
-            output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True)
-            plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./plots/simulation_dynamics_sim{i}_{system.name}.png")
-            total_output.append(output)
-=======
-    n_sims = 1
-    system = System.INSTANT_RUNOFF  # Example system, can be changed to any other system
-    total_output = []
-    for i in range(n_sims):
-        population = Population()
-        voter_strategies, candidate_approaches = population.get_strategies()
-        plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}_{system.name}.png")
-        sim = Simulation(population=population, n_rounds=10, election=Election(system=system))
-        output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True, delete_frames=False)
-        plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}_{system.name}.png")
-        total_output.append(output)
->>>>>>> 42fbd5a (add poll and voter strategy to plots)

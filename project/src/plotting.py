@@ -2,7 +2,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import imageio as iio
 from voting import *
-from voter import Strategy, Approach, Voter, Candidate
+from agents import Strategy, Approach, Voter, Candidate
 import os
 # Max 10
 COLOURS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -159,18 +159,19 @@ def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: lis
     voter_colours = [COLOURS[np.argmax(voter.get_votes(candidates, polls=polls, system=system, dist_metric=distance_euclid))] for voter in voters]
     cand_colours = [COLOURS[i] for i in range(len(candidates))]
 
-    voter_strat_symbol = {Strategy.HONEST : "$H$",
-                    Strategy.LOYAL : "$L$",
-                    Strategy.RANDOM : "$?$",
-                    Strategy.POPULIST : "$P$",
-                    Strategy.REALIST : "$R$"}
+    voter_strat_symbol = {
+        Strategy.HONEST : "$H$",
+        Strategy.LOYAL : "$L$",
+        Strategy.RANDOM : "$?$",
+        Strategy.POPULIST : "$P$",
+        Strategy.REALIST : "$R$"}
 
     for i, voter in enumerate(voters):
         ax[0].scatter(voters_points[i, 0], voters_points[i, 1], c=voter_colours[i], alpha=1, label=[voter.strat.name], marker=voter_strat_symbol[voter.strat])
 
     ax[0].scatter(cands_points[:,0], cands_points[:,1],
                c=cand_colours,
-               s=[max_radius * result for result in results],
+               s=[max(max_radius * result, 20) for result in results],
                alpha=0.5, label=[cand.approach.name for cand in candidates])
     ax[0].set_aspect('equal', adjustable='box')
     ax[0].text(-0.3, 1.15, f"VSE (util): {round(vse_util, 2)}", transform=ax[0].transAxes, fontsize=12, verticalalignment='top')

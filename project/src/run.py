@@ -1,8 +1,58 @@
 from plotting import *
 from geometry import *
 from voting import *
-from voter import *
+from agents import *
+from election import *
+from simulation import *
 
+example_params = {
+    # Election parameters
+    "system" : System.INSTANT_RUNOFF,
+    "threshold" : 0.1,
+    "dist_metric" : distance_euclid,
+    # Simulation parameters
+    "n_rounds": 10,
+    "n_polls": 5,
+    # Population parameters
+    "campaign_weight": 0.5,  # Weight of the campaign message in the voter's decision
+    "poll_weight": 0.3,      # Weight of the polls in the voter's decision
+    "social_weight": 0.2,    # Weight of the social influence in the voter's decision
+    "dimension": 2,          # Dimension of the space in which voters and candidates are located
+    "low": -1,               # Lower bound for the uniform distribution of voter positions
+    "high": 1,               # Upper bound for the uniform distribution of voter positions
+    "mu": 0,                 # Mean for the normal distribution of voter positions
+    "sigma": 1,
+    "cand_dist": Initialization.UNIFORM,  # Distribution type for candidate positions: "uniform", "normal", "cluster", or "custom"
+    "n_candidates": 10,       # Number of candidates in the election
+    "voter_dist": Initialization.UNIFORM, # Distribution type for voter positions: "uniform", "normal", "cluster", or "custom"
+    "n_voters": 200,          # Number of voters in the population
+    "use_local_neighborhood": True,  # Whether to use local neighborhood for updating voter opinions
+    "neighborhood_radius": 0.2,  # Radius for the local neighborhood around
+    "per_polls": 0.1,         # Percentage of the subsample size when polling
+    # Voter parameters
+    "best_preference": 0.5,  # Best ideological position for the voter
+    "worst_tolerance": 0.1,  # Worst ideological position that the voter tolerates
+    "campaign_weight": 0.4,  # Weight of the campaign message in the voter's decision
+    "poll_weight": 0.2,  # Weight of the polls in the voter's decision
+    "social_weight": 0.6,  # Weight of the social influence in the voter's decision
+    # Candidate parameters
+    "approach_weight": 0.005,  # Weight of the approach in the candidate's position update
+}
+
+if __name__ == "__main__":
+    system = example_params['system']
+    n_sims = 1
+    total_output = []
+    for i in range(n_sims):
+        population = Population()
+        voter_strategies, candidate_approaches = population.get_strategies()
+        plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}_{system.name}.png")
+        sim = Simulation(population=population, params=example_params)
+        output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True, delete_frames=False)
+        plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}_{system.name}.png")
+        total_output.append(output)
+
+"""
 # TODO Create voters, candidates, run simulations, calculate and plot results, etc.
 if __name__ == "__main__":
     voters = [Voter(point, Strategy.HONEST, 1, 1) for point in get_uniform(10)]
@@ -72,3 +122,4 @@ if __name__ == "__main__":
         # plot_pie(votes_counts, output_path="./inst_" + str(round) + "_pie.png"
         plot_bar(votes_counts, cand_shifts=shifts, output_path="./inst_" + str(round) + "_bar.png")
         # print("Instanf runoff round", round, "VSE:", vse_util(voters, candidates, results))
+"""

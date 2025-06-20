@@ -1,7 +1,6 @@
 import numpy as np
 from geometry import *
-import math
-from voter import Voter, Candidate, System
+from agents import Voter, Candidate, System
 
 
 def trunc_votes(vote_counts : list[int], vote_sum : int, threshold : float):
@@ -13,7 +12,7 @@ def sum_votes(voters : list[Voter], candidates : list[Candidate], polls : list[f
     votes_counts = [0 for _ in range(len(candidates))]
 
     for voter in voters:
-        for i, vote in enumerate(voter.get_votes(candidates, polls, system, dist_metric)):
+        for i, vote in enumerate(voter.get_votes(candidates=candidates, polls=polls, system=system, dist_metric=dist_metric)):
             votes_counts[i] += vote
 
     return votes_counts
