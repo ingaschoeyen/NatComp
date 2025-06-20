@@ -54,10 +54,16 @@ class Candidate():
     def __repr__(self):
         return f"Candidate(id={self.id}, coords={self.coords}, votes={self.votes})"
     
-    def update_position(self, approach_weight: float = 0.1):
-        self.campaign_coords[0] += self.approach_weight*(self.avg_voter_position[0] - self.coords[0])
-        self.campaign_coords[1] += self.approach_weight*(self.avg_voter_position[1] - self.coords[1])
 
+    def update_position(self, target_position: list[float], approach_weight: float = 0.1):
+        self.coords[0] += self.approach_weight*(target_position[0] - self.coords[0])
+        self.coords[1] += self.approach_weight*(target_position[1] - self.coords[1])
+        self.coords = np.clip(self.campaign_coords, 0, 1) 
+    
+    def make_campaign(self, approach_weight: float = 0.1):
+        self.campaign_coords[0] += self.approach_weight*(self.avg_voter_position[0] - self.campaign_coords[0])
+        self.campaign_coords[1] += self.approach_weight*(self.avg_voter_position[1] - self.campaign_coords[1])
+        self.campaign_coords = np.clip(self.campaign_coords, 0, 1)  # Ensure the coordinates are within the bounds of the space [0, 1] x [0, 1]
 
 
 class Voter():
@@ -90,9 +96,10 @@ class Voter():
             # Update votes based on strategy parameters and polls
             for i, candidate in enumerate(candidates):
                 # adjust votes based on campaign message - adjusted position of candidate based on polls * campaign_weight
-                self.votes[i] -= self.parameters.get('campaign_weight', 0) * (dist_metric(self.coords, candidate.campaign_coords))
+                self.votes[i] -= self.parameters.get('campaign_weight', 0) * 1/ (dist_metric(self.coords, candidate.campaign_coords))
                 self.votes[i] -= self.parameters.get('poll_weight', 0) * (polls[i] if polls is not None else 0)
                 self.votes[i] -= self.parameters.get('social_weight', 0) * (local_neighborhood[i] if local_neighborhood is not None else 0)
+                self.votes[i] = max(self.votes[i], 0)  # Ensure votes are non-negative
             # Normalize the votes to probabilities
             self.votes = self.votes / np.sum(self.votes)
 

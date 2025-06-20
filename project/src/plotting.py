@@ -83,6 +83,7 @@ def plot_population(strategies: list[Strategy], approaches: list[Approach], outp
             autopct='%1.1f%%',
             startangle=140,
             colors=COLOURS[:len(Strategy)])
+    plt.title('Voter Strategy Distribution')
     plt.subplot(1, 2, 2)
     plt.pie([approaches.count(approach.value) for approach in Approach],
             labels=[approach.name for approach in Approach],
@@ -90,7 +91,7 @@ def plot_population(strategies: list[Strategy], approaches: list[Approach], outp
             startangle=140,
             colors=COLOURS[:len(Approach)]) 
     plt.tight_layout()
-    plt.title('Population Distribution')
+    plt.title('Candidate Approach Distribution')
     plt.savefig(output_path)
 
 def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation_dynamics.png"):
@@ -103,20 +104,36 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     rounds = len(simulation_results)
     results = [result['votes'] for result in simulation_results]
     cand_results = np.reshape(results[:], (rounds, len(results[0])))
+
     
     vse = [result['vse'] for result in simulation_results]
     vse = np.reshape(vse[:], (rounds, 1))
     print(cand_results.shape, vse.shape)
-    plt.figure(figsize=(12, 6))
-    for i in range(len(results[0])):
-        plt.plot(cand_results[:, i], label=f'Candidate {i+1}', marker='o', linestyle='-')
+    plt.subplots(2, 1, figsize=(15, 10), height_ratios=[1, 4])
+    plt.subplot(2, 1, 1)
     plt.plot(vse, label='Voter Satisfaction Efficiency (VSE)', marker='o', linestyle='-', color='blue')
-    plt.xticks(range(rounds), [f'Round {i+1}' for i in range(rounds)])
+    plt.xlabel('Round')
+    plt.ylabel('VSE')
+    plt.title('Voter Satisfaction Efficiency Over')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    
+    plt.subplot(2,1,2)
+    prev = 0 
+    for i in range(len(results[0])):
+        plt.fill_between(range(rounds), prev, prev+cand_results[:, i], label=f'Candidate {i+1}', color=COLOURS[i % len(COLOURS)], alpha=0.5)
+        prev += cand_results[:, i]
+
     plt.xlabel('Round')
     plt.ylabel('Votes')
-    plt.title('Simulation Dynamics')
-    plt.legend()
+    plt.title('Vote Composition')
+    plt.legend(loc='center right', bbox_to_anchor=(1, 0.5))
+    plt.grid(True)
+    plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
 # TODO other types of plots
+
+
 # TODO plot quality (VSE) dependent on parameters of system

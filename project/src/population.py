@@ -24,13 +24,13 @@ example_population_params = {
 class Population():
 
 
-    def __init__(self, params: dict = None):
-        self.voters : list[Voter] = []
-        self.cands : list[Candidate] = []
+    def __init__(self, params: dict = None, voters: list[Voter] = None, candidates: list[Candidate] = None):
         self.params = params if params is not None else example_population_params
+        self.cands = candidates
         self.init_canidates(params)
+        self.voters = voters
         self.init_voters(params)
-
+        self.elected_candidates = [i for i in range(len(self.cands))]
 
 
     def get_strategies(self):
@@ -54,52 +54,59 @@ class Population():
         pass
 
     # TODO Custom initial setups based on available data
-    def init_custom(self):
+    def init_custom(self, voters: list[Voter] = None, candidates: list[Candidate] = None):
+        self.voters = voters if voters is not None else []
+        self.cands = candidates if candidates is not None else []
         pass
 
     def init_canidates(self, params: dict = None):
         if params is None:
             params = example_population_params
 
-        n_candidates = params.get("n_candidates", 3)
-        dimension = params.get("dimension", 2)
-        low = params.get("low", -1)
-        high = params.get("high", 1)
-        if params.get("cand_dist", "uniform") == "normal":
-            mu = params.get("mu", 0)
-            sigma = params.get("sigma", 1)
-            self.cands = [Candidate([float(np.random.normal(mu, sigma)) for _ in range(dimension)], i, approach=np.random.choice(list(Approach))) for i in range(n_candidates)]
-        elif params.get("cand_dist", "uniform") == "cluster":
-            self.cands = []
-            # TODO Implement cluster distribution for candidates
-        elif params.get("cand_dist", "uniform") == "custom":
-            self.cands = []
-            # TODO Implement custom distribution for candidates
-        else:  # Default to uniform distribution
-            self.cands = [Candidate([float(np.random.uniform(low, high)) for _ in range(dimension)], i, approach=np.random.choice(list(Approach))) for i in range(n_candidates)]
+        if self.cands is not None:
+            pass
+        else:
+            n_candidates = params.get("n_candidates", 3)
+            dimension = params.get("dimension", 2)
+            low = params.get("low", -1)
+            high = params.get("high", 1)
+            if params.get("cand_dist", "uniform") == "normal":
+                mu = params.get("mu", 0)
+                sigma = params.get("sigma", 1)
+                self.cands = [Candidate([float(np.random.normal(mu, sigma)) for _ in range(dimension)], i, approach=np.random.choice(list(Approach))) for i in range(n_candidates)]
+            elif params.get("cand_dist", "uniform") == "cluster":
+                self.cands = []
+                # TODO Implement cluster distribution for candidates
+            elif params.get("cand_dist", "uniform") == "custom":
+                self.cands = []
+                # TODO Implement custom distribution for candidates
+            else:  # Default to uniform distribution
+                self.cands = [Candidate([float(np.random.uniform(low, high)) for _ in range(dimension)], i, approach=np.random.choice(list(Approach))) for i in range(n_candidates)]
 
     def init_voters(self, params: dict = None):
         if params is None:
             params = example_population_params
-
-        n_voters = params.get("n_voters", 100)
-        dimension = params.get("dimension", 2)
-        low = params.get("low", -1)
-        high = params.get("high", 1)
-
-        if params.get("voter_dist", "uniform") == "normal":
-            mu = params.get("mu", 0)
-            sigma = params.get("sigma", 1)
-            self.voters = [Voter(coords=[np.random.normal(mu, sigma) for _ in range(dimension)], strat=np.random.choice(list(Strategy)), parameters=params, id = i) for i in range(n_voters)]
-        elif params.get("voter_dist", "uniform") == "cluster":
-            self.voters = []
-            # TODO Implement cluster distribution for voters
-        elif params.get("voter_dist", "uniform") == "custom":
-            self.voters = []
-            # TODO Implement custom distribution for voters
+        if self.voters is not None:
+            pass
         else:
-            # Default to uniform distribution
-            self.voters = [Voter(coords=[np.random.uniform(low, high, dimension)], strat=np.random.choice(list(Strategy)), parameters=params, id = i) for i in range(n_voters)]
+            n_voters = params.get("n_voters", 100)
+            dimension = params.get("dimension", 2)
+            low = params.get("low", -1)
+            high = params.get("high", 1)
+
+            if params.get("voter_dist", "uniform") == "normal":
+                mu = params.get("mu", 0)
+                sigma = params.get("sigma", 1)
+                self.voters = [Voter(coords=[np.random.normal(mu, sigma) for _ in range(dimension)], strat=np.random.choice(list(Strategy)), parameters=params, id = i) for i in range(n_voters)]
+            elif params.get("voter_dist", "uniform") == "cluster":
+                self.voters = []
+                # TODO Implement cluster distribution for voters
+            elif params.get("voter_dist", "uniform") == "custom":
+                self.voters = []
+                # TODO Implement custom distribution for voters
+            else:
+                # Default to uniform distribution
+                self.voters = [Voter(coords=[np.random.uniform(low, high, dimension)], strat=np.random.choice(list(Strategy)), parameters=params, id = i) for i in range(n_voters)]
 
     def init_from_data(self, voters: list[Voter], candidates: list[Candidate]):
 
@@ -174,7 +181,7 @@ class Population():
         total_votes = sum(neighborhood_votes)
         return [votes / total_votes if total_votes > 0 else 0 for votes in neighborhood_votes]
     
-    def update_voters(self, polls=None, candidates: list[Candidate] = None, distance_euclid=distance_euclid):
+    def update_voter_opinions(self, polls=None, candidates: list[Candidate] = None, distance_euclid=distance_euclid):
         """
         Updates the voters' voting preferences based on the current candidates and polls.
         If polls are provided, they are used to adjust the voters' preferences.
@@ -198,8 +205,17 @@ class Population():
                                           local_neighborhood=local_neighborhood, 
                                           campaigns=[cand.coords for cand in self.cands])
     
+    def update_voters(self):
+        gov_candidates = [self.cands[i] for i in self.elected_candidates]
+        for voter in self.voters:
+            voter.update_voting_preferences(gov_candidates, 
+                                          dist_metric=distance_euclid, 
+                                          polls=None, 
+                                          local_neighborhood=None, 
+                                          campaigns=[cand.coords for cand in gov_candidates])
+
     # TODO (*Complete*) Update the candidates based on voters' preferences and campaigns
-    def update_candidates(self, candidates: list[Candidate] = None, avg_voter_position=None, polls=None):
+    def campaign(self, candidates: list[Candidate] = None, avg_voter_position=None, polls=None):
         """
         Updates the candidates' positions based on the voters' preferences and campaigns.
         This can include adjusting their positions to better align with the average position of voters who voted for them.
@@ -219,16 +235,30 @@ class Population():
                     candidate.coords[1] += np.random.uniform(-0.1, 0.1)
                 case Approach.DEFENSIVE:
                     candidate.avg_voter_position = avg_voter_position[candidate.id] if avg_voter_position is not None else candidate.coords
-                    candidate.update_position()
+                    candidate.make_campaign()
                 case Approach.OFFENSIVE:             
                     candidate.avg_voter_position = avg_voter_position[np.argmax(polls)] if avg_voter_position is not None else candidate.coords
-                    candidate.update_position()
+                    candidate.make_campaign()
 
-    def campaign(self):
+    def update_candidates(self, results: list[float] = None):
         """
         Simulates campaigning by candidates, which can include adjusting their positions based on the average voter position.
         This can be implemented as a separate method or integrated into the update_candidates method.
         """
-        for candidate in self.cands:
-            # For simplicity, let's say candidates move towards the average voter position
-            candidate.make_campaign(populist_weight=self.params.get("campaign_weight", 0.1))
+       
+        if results is None:
+            pass
+        else:
+            self.elected_candidates = [candidate.id for candidate in self.cands if results[candidate.id]>= self.params.get('threshold_gov', 0.05)]
+            for candidate in self.cands:
+                # check if candidate got enough votes to be considered this round
+                match candidate.approach:
+                    case Approach.RANDOM:
+                        # Randomly adjust candidate position within a small range
+                        candidate.coords[0] += np.random.uniform(-0.1, 0.1)
+                        candidate.coords[1] += np.random.uniform(-0.1, 0.1)
+                    case Approach.DEFENSIVE:
+                        candidate.coords = candidate.campaign_coords
+                    case Approach.OFFENSIVE:             
+                        target_location = self.cands[np.argmax(results)].coords if results is not None else candidate.coords
+                        candidate.update_position(target_location)

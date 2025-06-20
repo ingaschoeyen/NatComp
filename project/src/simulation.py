@@ -40,42 +40,69 @@ class Simulation():
             json.dump(self.output_sims, f)
         print('results dumped')
 
-    def run_election_cycles(self):
+    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True):
         # set up like this so that we can run multiple simulations with different parameters and store results in one json file
         # create unique sim id
         sim_id = str(datetime.now()) + str(np.random.randint(0, 1000000))
         sim_id = sim_id.replace(" ", "_").replace(":", "-").replace(".", "-")  # replace spaces and colons with underscores and hyphens
         self.output_sims['sim_id'] = sim_id
         self.output_sims['results'] = []  # Initialize results list
-        output = [{'round': 0, 'votes': [], 'vse': 0.0}]  # Initialize output structure
+        output = [{'round': 0, 'votes': [], 'vse': 1.0}]  # Initialize output structure
         
         population = self.population if self.population else Population()
         election = self.election if self.election else Election()
+        results = None
         for rounds in range(self.n_rounds):
             print(f"Running round {rounds + 1}/{self.n_rounds}")
-            # Update voter preferences based on candidates
+            # Update voter and candidate positions based on last rounds results
+
             population.update_voters()
             for i in range(self.n_polls):
-                # missing campaigning functionality
                 polls, avg_voter_pos = population.polls()
-                population.update_voters(polls=polls)
-                population.update_candidates(avg_voter_position=avg_voter_pos)
+                population.campaign(avg_voter_position=avg_voter_pos, polls=polls)
+                population.update_voter_opinions(polls=polls)
+
             # do an election
             votes_counts, results, vse = election.do_an_election(population.get_voters(), candidates=population.cands, polls = polls)
+            # candidates update based on election
+            population.update_candidates(results)
             # store results
-            election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
+            if plot_results:
+                election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
             self.output_sims.get('results').append({'round': rounds, 'votes': results, 'vse': vse})
 
 
         print("Election simulation completed.")
-        self.dump_results(sim_id) 
+        if save_results:
+            self.dump_results(sim_id) 
+        else:
+            return self.output_sims
+
+
+
+def run_multiple_voting_systems(voting_systems: list[System], population: Population, n_rounds: int = 10, n_polls: int = 5):
+    """
+    Run the election simulation for multiple voting systems.
+    :param voting_systems: List of voting systems to simulate.
+    :param population: Population of voters and candidates.
+    :param n_rounds: Number of rounds to run the simulation.
+    :param n_polls: Number of polls per round.
+    """
+    for system in voting_systems:
+        print(f"Running simulation for {system.name} voting system.")
+        sim = Simulation(population=population.deepcopy(), election=Election(system=system))
+        sim.run_election_cycles()
+        print(f"Simulation for {system.name} completed.")
 
        
     
 if __name__ == "__main__":
-        population = Population()
-        voter_strategies, candidate_approaches = population.get_strategies()
-        plot_population(voter_strategies, candidate_approaches, output_path="./population_distribution.png")
-        sim = Simulation(population=population, n_rounds=10)
-        sim.run_election_cycles()
-        plot_sim_dynamics(sim.output_sims.get('results'), output_path="./simulation_dynamics.png")
+        n_sims = 1
+
+        for i in range(n_sims):
+            population = Population()
+            voter_strategies, candidate_approaches = population.get_strategies()
+            plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}.png")
+            sim = Simulation(population=population, n_rounds=10)
+            output = sim.run_election_cycles(save_results=False, plot_results=False)
+            plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}.png")
