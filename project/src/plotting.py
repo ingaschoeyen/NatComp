@@ -90,7 +90,7 @@ def plot_population(strategies: list[Strategy], approaches: list[Approach], outp
             labels=[approach.name for approach in Approach],
             autopct='%1.1f%%',
             startangle=140,
-            colors=COLOURS[:len(Approach)]) 
+            colors=COLOURS[:len(Approach)])
     plt.tight_layout()
     plt.title('Candidate Approach Distribution')
     plt.savefig(output_path)
@@ -106,7 +106,7 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     results = [result['votes_per'] for result in simulation_results]
     cand_results = np.reshape(results[:], (rounds, len(results[0])))
 
-    
+
     vse_util = [result['vse_util'] for result in simulation_results]
     vse_util = np.reshape(vse_util[:], (rounds, 1))
 
@@ -127,9 +127,9 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    
+
     plt.subplot(2,1,2)
-    prev = 0 
+    prev = 0
     for i in range(len(results[0])):
         plt.fill_between(range(rounds), prev, prev+cand_results[:, i], label=f'Candidate {i+1}', color=COLOURS[i % len(COLOURS)], alpha=0.5)
         prev += cand_results[:, i]
@@ -145,38 +145,54 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
 # TODO other types of plots
 
 def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: list[float], results: list[float], system: System, cur_round, vse_util, output_path: str = "./election_gif_frame.png"):
-   
+
     max_radius = 1000 # radius of the max size of candidates to multiply by results
-    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    plt.subplot(1, 2, 1)
+    fig, ax = plt.subplots(1, 3, figsize=(10, 5))
+    plt.subplot(1, 3, 1)
 
     ax[0].set_xlim(-1.1, 1.1)
     ax[0].set_ylim(-1.1, 1.1)
     voters_points = [voter.coords for voter in voters]
     cands_points = [cand.coords for cand in candidates]
     voters_points = np.reshape(voters_points, (-1, 2))
-    cands_points = np.reshape(cands_points, (-1, 2))  
+    cands_points = np.reshape(cands_points, (-1, 2))
     voter_colours = [COLOURS[np.argmax(voter.get_votes(candidates, polls=polls, system=system, dist_metric=distance_euclid))] for voter in voters]
     cand_colours = [COLOURS[i] for i in range(len(candidates))]
 
-    ax[0].scatter(voters_points[:, 0], voters_points[:, 1],
-               c=voter_colours,
-               alpha=1, label=[voter.strat.name for voter in voters])
+    voter_strat_symbol = {Strategy.HONEST : "$H$",
+                    Strategy.LOYAL : "$L$",
+                    Strategy.RANDOM : "$?$",
+                    Strategy.POPULIST : "$P$",
+                    Strategy.REALIST : "$R$"}
+
+    for i, voter in enumerate(voters):
+        ax[0].scatter(voters_points[i, 0], voters_points[i, 1], c=voter_colours[i], alpha=1, label=[voter.strat.name], marker=voter_strat_symbol[voter.strat])
+
     ax[0].scatter(cands_points[:,0], cands_points[:,1],
                c=cand_colours,
                s=[max_radius * result for result in results],
                alpha=0.5, label=[cand.approach.name for cand in candidates])
     ax[0].set_aspect('equal', adjustable='box')
     ax[0].text(-0.3, 1.15, f"VSE (util): {round(vse_util, 2)}", transform=ax[0].transAxes, fontsize=12, verticalalignment='top')
-    
-    plt.subplot(1, 2, 2)
-    ax[1].bar(x=CAND_NAMES[:len(candidates)], height=results, color=cand_colours)
+
+    plt.subplot(1, 3, 2)
+    ax[1].bar(x=CAND_NAMES[:len(candidates)], height=polls, color=cand_colours)
     ax[1].set_xlabel('Candidates')
-    ax[1].set_ylabel('Vote Share')
+    ax[1].set_ylabel('Polls Vote Share')
     fig.suptitle(f"Round {cur_round} - {system.name} System")
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
+
+    plt.subplot(1, 3, 3)
+    ax[2].bar(x=CAND_NAMES[:len(candidates)], height=results, color=cand_colours)
+    ax[2].set_xlabel('Candidates')
+    ax[2].set_ylabel('Election Vote Share')
+    fig.suptitle(f"Round {cur_round} - {system.name} System")
+    fig.tight_layout()
+    fig.savefig(output_path)
+    plt.close(fig)
+
     return fig, output_path  # Return the path to the saved image for GIF creation
 
 # TODO plot quality (VSE) dependent on parameters of system

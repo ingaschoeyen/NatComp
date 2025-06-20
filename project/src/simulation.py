@@ -41,7 +41,7 @@ class Simulation():
             json.dump(self.output_sims, f)
         print('results dumped')
 
-    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True, make_gif: bool = False):
+    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True, make_gif: bool = False, delete_frames: bool = True):
         # set up like this so that we can run multiple simulations with different parameters and store results in one json file
         # create unique sim id
         sim_id = str(datetime.now()) + str(np.random.randint(0, 1000000))
@@ -77,14 +77,18 @@ class Simulation():
                 election.plot_an_election(population.voters, population.cands, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
             self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp, 'norm_entropy': norm_entropy})
             if make_gif:
-                fig, frame_path = get_gif_scatter(population.voters, population.cands, polls, results, election.system, rounds, vse_util,  output_path=f"./election_round_{rounds + 1}_scatter.png")
+                fig, frame_path = get_gif_scatter(population.voters, population.cands, polls, results, election.system, rounds, vse_util, output_path=f"./election_round_{rounds + 1}_scatter.png")
                 fig.show()
                 gif_frames.append(frame_path)
 
         print("Election simulation completed.")
 
         if make_gif:
+<<<<<<< HEAD
             make_gif_scatter(gif_frames, output_path=f"./gifs/election_{sim_id}.gif")
+=======
+            make_gif_scatter(gif_frames, output_path=f"./election_{sim_id}.gif", delete_frames=delete_frames)
+>>>>>>> 42fbd5a (add poll and voter strategy to plots)
         if save_results:
             self.dump_results(sim_id)
         else:
@@ -109,6 +113,7 @@ def run_multiple_voting_systems(voting_systems: list[System], population: Popula
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
         n_sims = 10
         n_rounds = 30
         system = System.APPROVAL  # Example system, can be changed to any other system
@@ -122,3 +127,16 @@ if __name__ == "__main__":
             output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True)
             plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./plots/simulation_dynamics_sim{i}_{system.name}.png")
             total_output.append(output)
+=======
+    n_sims = 1
+    system = System.INSTANT_RUNOFF  # Example system, can be changed to any other system
+    total_output = []
+    for i in range(n_sims):
+        population = Population()
+        voter_strategies, candidate_approaches = population.get_strategies()
+        plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}_{system.name}.png")
+        sim = Simulation(population=population, n_rounds=10, election=Election(system=system))
+        output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True, delete_frames=False)
+        plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}_{system.name}.png")
+        total_output.append(output)
+>>>>>>> 42fbd5a (add poll and voter strategy to plots)
