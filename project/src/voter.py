@@ -96,6 +96,7 @@ class Voter():
         else:
             # Update votes based on strategy parameters and polls
             for candidate in np.random.permutation(candidates):
+                self.votes[candidate.id] = dist_metric(self.coords, candidate.coords)  # Distance to candidate's position
                 # adjust votes based on campaign message - adjusted position of candidate based on polls * campaign_weight
                 self.votes[candidate.id] -= self.parameters.get('campaign_weight', 0) * 1/ (dist_metric(self.coords, candidate.campaign_coords))
                 self.votes[candidate.id] -= self.parameters.get('poll_weight', 0) * (polls[candidate.id] if polls is not None else 0)
@@ -147,7 +148,7 @@ class Voter():
                         votes_counts[random.randint(0, len(candidates)-1)] += 1
 
                     case Strategy.HONEST | Strategy.LOYAL:
-                        votes_counts[self.get_favourite(candidates, dist_metric)] += 1
+                        votes_counts[self.get_voting_preferences()] += 1
 
                     case Strategy.POPULIST:
                         votes_counts[np.argmax(polls)] += 1

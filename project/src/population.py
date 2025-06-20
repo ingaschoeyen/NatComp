@@ -6,9 +6,9 @@ import pandas as pd
 
 
 example_population_params = {
-    "campaign_weight": 0.5,  # Weight of the campaign message in the voter's decision
-    "poll_weight": 0.3,      # Weight of the polls in the voter's decision
-    "social_weight": 0.2,    # Weight of the social influence in the voter's decision
+    "campaign_weight": 0,  # Weight of the campaign message in the voter's decision
+    "poll_weight": 0.05,      # Weight of the polls in the voter's decision
+    "social_weight": 0.1,    # Weight of the social influence in the voter's decision
     "threshold": 0.05,        # Threshold for the minimum percentage of votes required for a candidate to be considered
     "dimension": 2,          # Dimension of the space in which voters and candidates are located
     "low": -1,               # Lower bound for the uniform distribution of voter positions

@@ -7,6 +7,7 @@ from itertools import product
 from datetime import datetime
 import json
 import os
+import copy
 """Simulation class to run the election simulation with (potentially multiple) populations of voters and candidates."""
 
 
@@ -109,11 +110,12 @@ if __name__ == "__main__":
         n_rounds = 30
         system = System.APPROVAL  # Example system, can be changed to any other system
         total_output = []
+        population = Population()
+        voter_strategies, candidate_approaches = population.get_strategies()
+        plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_{system.name}.png")
+         
         for i in range(n_sims):
-            population = Population()
-            voter_strategies, candidate_approaches = population.get_strategies()
-            plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}_{system.name}.png")
-            sim = Simulation(population=population, n_rounds=n_rounds, election=Election(system=system))
+            sim = Simulation(population=copy.copy(population), n_rounds=n_rounds, election=Election(system=system))
             output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True)
             plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}_{system.name}.png")
             total_output.append(output)
