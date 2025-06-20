@@ -84,7 +84,7 @@ class Simulation():
         print("Election simulation completed.")
 
         if make_gif:
-            make_gif_scatter(gif_frames, output_path=f"./election_{sim_id}.gif")
+            make_gif_scatter(gif_frames, output_path=f"./gifs/election_{sim_id}.gif")
         if save_results:
             self.dump_results(sim_id)
         else:
@@ -102,7 +102,7 @@ def run_multiple_voting_systems(voting_systems: list[System], population: Popula
     """
     for system in voting_systems:
         print(f"Running simulation for {system.name} voting system.")
-        sim = Simulation(population=population.deepcopy(), election=Election(system=system))
+        sim = Simulation(population=copy.copy(population), election=Election(system=system))
         sim.run_election_cycles()
         print(f"Simulation for {system.name} completed.")
 
@@ -120,5 +120,5 @@ if __name__ == "__main__":
         for i in range(n_sims):
             sim = Simulation(population=copy.copy(population), n_rounds=n_rounds, election=Election(system=system))
             output = sim.run_election_cycles(save_results=False, plot_results=False, make_gif=True)
-            plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./simulation_dynamics_sim{i}_{system.name}.png")
+            plot_sim_dynamics(sim.output_sims.get('results'), output_path=f"./plots/simulation_dynamics_sim{i}_{system.name}.png")
             total_output.append(output)
