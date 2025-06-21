@@ -152,7 +152,7 @@ class Population():
 
         # Normalize vote counts to percentages
         distributed_votes = sum(vote_counts)
-        polls = [votes / distributed_votes for votes in vote_counts]
+        polls = [votes / distributed_votes for votes in vote_counts] if distributed_votes > 0 else [0 for _ in vote_counts]
         # Calculate average voter position for each candidate
         # TODO some voting systems may allow more votes for one candidate from one voter,
         # so this would not be the average position
