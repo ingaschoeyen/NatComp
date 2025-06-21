@@ -1,8 +1,8 @@
 from typing import Optional
-from geometry import *
 import numpy as np
 from enum import Enum
 import random
+from geometry import *
 
 class Strategy(Enum):
     RANDOM = 1 # Vote randomly
@@ -57,8 +57,8 @@ class Candidate():
         self.campaign_coords = np.clip(self.campaign_coords, 0, 1)  # Ensure the coordinates are within the bounds of the space [0, 1] x [0, 1]
 
 default_voter_params = {
-    "best_preference": 0.5,  # Best ideological position for the voter
-    "worst_tolerance": 0.1,  # Worst ideological position that the voter tolerates
+    "best_preference": 1.0,  # Best ideological position for the voter
+    "worst_tolerance": 0.8,  # Worst ideological position that the voter tolerates
     "campaign_weight": 0.4,  # Weight of the campaign message in the voter's decision
     "poll_weight": 0.2,  # Weight of the polls in the voter's decision
     "social_weight": 0.6,  # Weight of the social influence in the voter's decision
@@ -87,7 +87,7 @@ class Voter():
 
     def update_votes(self, candidates: list[Candidate], system: System, dist_metric = distance_euclid, polls: list[float] = None, local_neighborhood: list[float] = None, campaigns: list[float] = None):
         self.votes = self.get_votes(candidates, system, polls, dist_metric)
-        
+
         # First Update the votes based on the distance to candidates
         # if all(self.votes == 0) or len(self.votes) == 0:
         #     self.votes = np.array([dist_metric(self.coords, candidate.coords) for candidate in np.random.permutation(candidates)])
@@ -150,7 +150,7 @@ class Voter():
                         votes_counts[random.randint(0, len(candidates)-1)] += 1
 
                     case Strategy.HONEST | Strategy.LOYAL:
-                        votes_counts[self.get_voting_preferences()] += 1
+                        votes_counts[self.get_favourite(candidates, dist_metric)] += 1
 
                     case Strategy.POPULIST:
                         votes_counts[np.argmax(polls)] += 1

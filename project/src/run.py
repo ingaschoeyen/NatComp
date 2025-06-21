@@ -26,7 +26,7 @@ example_params = {
     "n_candidates": 10,       # Number of candidates in the election
     "voter_dist": Initialization.UNIFORM, # Distribution type for voter positions: "uniform", "normal", "cluster", or "custom"
     "n_voters": 200,          # Number of voters in the population
-    "use_local_neighborhood": True,  # Whether to use local neighborhood for updating voter opinions
+    "use_local_neighborhood": False,  # Whether to use local neighborhood for updating voter opinions
     "neighborhood_radius": 0.2,  # Radius for the local neighborhood around
     "per_polls": 0.1,         # Percentage of the subsample size when polling
     # Voter parameters
@@ -37,6 +37,19 @@ example_params = {
     "social_weight": 0.6,  # Weight of the social influence in the voter's decision
     # Candidate parameters
     "approach_weight": 0.005,  # Weight of the approach in the candidate's position update
+    "cand_approach_dist": {
+        Approach.RANDOM : 0.05,
+        Approach.HONEST : 0.45,
+        Approach.DEFENSIVE : 0.25,
+        Approach.OFFENSIVE : 0.25
+    },
+    "voter_strat_dist": {
+        Strategy.RANDOM : 0.05,
+        Strategy.HONEST : 0.10,
+        Strategy.POPULIST : 0.10,
+        Strategy.REALIST : 0.50,
+        Strategy.LOYAL : 0.25,
+    },
 }
 
 if __name__ == "__main__":
@@ -44,7 +57,7 @@ if __name__ == "__main__":
     n_sims = 1
     total_output = []
     for i in range(n_sims):
-        population = Population()
+        population = Population(params=example_params)
         voter_strategies, candidate_approaches = population.get_strategies()
         plot_population(voter_strategies, candidate_approaches, output_path=f"./population_distribution_sim_{i}_{system.name}.png")
         sim = Simulation(population=population, params=example_params)

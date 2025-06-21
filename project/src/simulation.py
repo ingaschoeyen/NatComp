@@ -1,14 +1,12 @@
 from typing import Any, Dict
+import json
+import os
+from itertools import product
+from datetime import datetime
 from agents import *
 from population import *
 from plotting import *
 from election import Election
-import pandas as pd
-from itertools import product
-from datetime import datetime
-import json
-import os
-import copy
 """Simulation class to run the election simulation with (potentially multiple) populations of voters and candidates."""
 
 

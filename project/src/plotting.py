@@ -140,6 +140,7 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     plt.legend(loc='center right', bbox_to_anchor=(1, 0.5))
     plt.grid(True)
     plt.tight_layout()
+    plt.show()
     plt.savefig(output_path)
     plt.close()
 # TODO other types of plots
@@ -180,10 +181,6 @@ def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: lis
     ax[1].bar(x=CAND_NAMES[:len(candidates)], height=polls, color=cand_colours)
     ax[1].set_xlabel('Candidates')
     ax[1].set_ylabel('Polls Vote Share')
-    fig.suptitle(f"Round {cur_round} - {system.name} System")
-    fig.tight_layout()
-    fig.savefig(output_path)
-    plt.close(fig)
 
     plt.subplot(1, 3, 3)
     ax[2].bar(x=CAND_NAMES[:len(candidates)], height=results, color=cand_colours)

@@ -1,9 +1,10 @@
+import random
 from typing import Any, Optional
 import numpy as np
-from geometry import *
-from agents import Voter, Candidate, Strategy, Approach, System
 import pandas as pd
 from enum import Enum
+from geometry import *
+from agents import Voter, Candidate, Strategy, Approach, System
 
 
 class Initialization(Enum):
@@ -26,23 +27,35 @@ default_pop_params = {
     "high": 1,               # Upper bound for the uniform distribution of voter positions
     "mu": 0,                 # Mean for the normal distribution of voter positions
     "sigma": 1,
-    "cand_dist": Initialization.UNIFORM,  # Distribution type for candidate positions: "uniform", "normal", "cluster", or "custom"
+    "cand_coord_dist": Initialization.UNIFORM,  # Distribution type for candidate positions: "uniform", "normal", "cluster", or "custom"
     "n_candidates": 10,       # Number of candidates in the election
-    "voter_dist": Initialization.UNIFORM, # Distribution type for voter positions: "uniform", "normal", "cluster", or "custom"
+    "voter_coord_dist": Initialization.UNIFORM, # Distribution type for voter positions: "uniform", "normal", "cluster", or "custom"
     "n_voters": 200,          # Number of voters in the population
     "use_local_neighborhood": False,  # Whether to use local neighborhood for updating voter opinions
     "neighborhood_radius": 0.2,  # Radius for the local neighborhood around
     "per_polls": 0.1,         # Percentage of the subsample size when polling
     # Candidate parameters
     "approach_weight": 0.005,  # Weight of the approach in the candidate's position update
+    "cand_approach_dist": {
+        Approach.RANDOM : 0.05,
+        Approach.HONEST : 0.45,
+        Approach.DEFENSIVE : 0.25,
+        Approach.OFFENSIVE : 0.25
+    },
     # Voter parameters
-    "best_preference": 0.5,  # Best ideological position for the voter
-    "worst_tolerance": 0.1,  # Worst ideological position that the voter tolerates
+    "voter_strat_dist": {
+        Strategy.RANDOM : 0.05,
+        Strategy.HONEST : 0.10,
+        Strategy.POPULIST : 0.10,
+        Strategy.REALIST : 0.50,
+        Strategy.LOYAL : 0.25,
+    },
+    "best_preference": 1.0,  # Best ideological position for the voter
+    "worst_tolerance": 0.8,  # Worst ideological position that the voter tolerates
     "campaign_weight": 0.4,  # Weight of the campaign message in the voter's decision
     "poll_weight": 0.2,  # Weight of the polls in the voter's decision
     "social_weight": 0.6,  # Weight of the social influence in the voter's decision
 }
-
 
 class Population():
 
@@ -55,10 +68,12 @@ class Population():
         self.high = params.get("high", default_pop_params["high"])
         self.mu = params.get("mu", default_pop_params["mu"])
         self.sigma = params.get("sigma", default_pop_params["sigma"])
-        self.cand_dist = params.get("cand_dist", default_pop_params["cand_dist"])
+        self.cand_coord_dist = params.get("cand_coord_dist", default_pop_params["cand_coord_dist"])
         self.n_candidates = params.get("n_candidates", default_pop_params["n_candidates"])
-        self.voter_dist = params.get("voter_dist", default_pop_params["voter_dist"])
+        self.cand_approach_dist = params.get("cand_approach_dist", default_pop_params["cand_approach_dist"])
+        self.voter_coord_dist = params.get("voter_coord_dist", default_pop_params["voter_coord_dist"])
         self.n_voters = params.get("n_voters", default_pop_params["n_voters"])
+        self.voter_strat_dist = params.get("voter_strat_dist", default_pop_params["voter_strat_dist"])
         self.use_local_neighborhood = params.get("use_local_neighborhood", default_pop_params["use_local_neighborhood"])
         self.neighborhood_radius = params.get("neighborhood_radius", default_pop_params["neighborhood_radius"])
         self.per_polls = params.get("per_polls", default_pop_params["per_polls"])
@@ -73,22 +88,24 @@ class Population():
         return voter_strategies, cand_approaches
 
     def init_candidates(self, params: dict = None):
-        match self.cand_dist:
+        approaches = random.choices(list(Approach), weights=self.cand_approach_dist.values(), k=self.n_candidates)
+        match self.cand_coord_dist:
             case Initialization.UNIFORM:
-                return [Candidate([float(np.random.uniform(self.low, self.high)) for _ in range(self.dimension)], i, approach=np.random.choice(list(Approach)), params=params) for i in range(self.n_candidates)]
+                return [Candidate([float(np.random.uniform(self.low, self.high)) for _ in range(self.dimension)], i, approach=approaches[i], params=params) for i in range(self.n_candidates)]
             case Initialization.NORMAL:
-                return [Candidate([float(np.random.normal(self.mu, self.sigma)) for _ in range(self.dimension)], i, approach=np.random.choice(list(Approach)), params=params) for i in range(self.n_candidates)]
+                return [Candidate([float(np.random.normal(self.mu, self.sigma)) for _ in range(self.dimension)], i, approach=approaches[i], params=params) for i in range(self.n_candidates)]
             case Initialization.CLUSTER:
                 pass # TODO Implement cluster distribution for candidates
             case Initialization.CUSTOM:
                 pass # TODO Implement custom distribution for candidates
 
     def init_voters(self, params: dict = None):
-        match self.cand_dist:
+        strategies = random.choices(list(Strategy), weights=self.voter_strat_dist.values(), k=self.n_voters)
+        match self.cand_coord_dist:
             case Initialization.UNIFORM:
-                return [Voter(coords=[np.random.uniform(self.low, self.high, self.dimension)], strat=np.random.choice(list(Strategy)), params=params, id = i) for i in range(self.n_voters)]
+                return [Voter(coords=[np.random.uniform(self.low, self.high, self.dimension)], strat=strategies[i], params=params, id = i) for i in range(self.n_voters)]
             case Initialization.NORMAL:
-                return [Voter(coords=[np.random.normal(self.mu, self.sigma) for _ in range(self.dimension)], strat=np.random.choice(list(Strategy)), params=params, id = i) for i in range(self.n_voters)]
+                return [Voter(coords=[np.random.normal(self.mu, self.sigma) for _ in range(self.dimension)], strat=strategies[i], params=params, id = i) for i in range(self.n_voters)]
             case Initialization.CLUSTER:
                 pass # TODO Implement cluster distribution for candidates
             case Initialization.CUSTOM:
@@ -166,9 +183,9 @@ class Population():
         If polls are provided, they are used to adjust the voters' preferences.
         """
         for voter in self.voters:
-            local_neighborhood = None if not self.use_local_neighborhood else self.local_neighborhood(voter)
+            loc_neigh = None if not self.use_local_neighborhood else self.local_neighborhood(voter, system, polls, distance_metric)
             voter.update_votes(self.candidates, system=system, dist_metric=distance_metric, polls=polls,
-                local_neighborhood=local_neighborhood,
+                local_neighborhood=loc_neigh,
                 campaigns=[cand.coords for cand in self.candidates])
 
     # TODO (*Complete*) Update the candidates based on voters' preferences and campaigns
