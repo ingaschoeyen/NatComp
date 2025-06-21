@@ -75,7 +75,7 @@ class Simulation():
                 election.plot_election(population.voters, population.candidates, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
             self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp, 'norm_entropy': norm_entropy})
             if make_gif:
-                fig, frame_path = get_gif_scatter(population.voters, population.cands, polls, results, election.system, rounds, vse_util,  output_path=f"./plots/election_round_{rounds + 1}_scatter.png")
+                fig, frame_path = get_gif_scatter(population.voters, population.candidates, polls, results, election.system, rounds, vse_util,  output_path=f"./plots/election_round_{rounds + 1}_scatter.png")
                 fig.show()
                 gif_frames.append(frame_path)
 
