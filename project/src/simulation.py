@@ -21,9 +21,9 @@ class Simulation():
     candidates: list[Population]
     output_sims: dict # DataFrame to store the results of each round
 
-    def __init__(self, population: Population, params : Dict[str, Any] = default_sim_params):
+    def __init__(self, population: Population, params : Dict[str, Any] = default_sim_params, election: Election = None):
         self.population = population
-        self.election = Election(population=population, params=params)
+        self.election = Election(population=population, params=params) if election is None else election
         self.n_rounds = params.get('n_rounds', default_sim_params['n_rounds'])
         self.n_polls = params.get('n_polls', default_sim_params['n_polls'])
         self.output_sims = dict() # {sim_id, sim_results}
@@ -38,7 +38,7 @@ class Simulation():
             json.dump(self.output_sims, f)
         print('results dumped')
 
-    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True, make_gif: bool = False, delete_frames: bool = True):
+    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True, make_gif: bool = False, delete_frames: bool = True, verbose: bool = True):
         # set up like this so that we can run multiple simulations with different parameters and store results in one json file
         # create unique sim id
         sim_id = str(datetime.now()) + str(np.random.randint(0, 1000000))
@@ -55,7 +55,8 @@ class Simulation():
         polls = None # Initially no previous polls, let everyone vote honestly/randomly
 
         for rounds in range(self.n_rounds):
-            print(f"Running round {rounds + 1}/{self.n_rounds}")
+            if verbose:
+                print(f"Running round {rounds + 1}/{self.n_rounds}")
 
             # Candidates campaign based on the results of the previous election
             population.campaign_candidates(results)
@@ -75,14 +76,13 @@ class Simulation():
                 election.plot_election(population.voters, population.candidates, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
             self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp, 'norm_entropy': norm_entropy})
             if make_gif:
-                fig, frame_path = get_gif_scatter(population.voters, population.candidates, polls, results, election.system, rounds, vse_util,  output_path=f"./plots/election_round_{rounds + 1}_scatter.png")
-                fig.show()
+                fig, frame_path = get_gif_scatter(population.voters, population.cands, polls, results, election.system, rounds, vse_util,  output_path=f"./plots/election_round_{rounds + 1}_scatter.png")
                 gif_frames.append(frame_path)
 
         print("Election simulation completed.")
 
         if make_gif:
-            make_gif_scatter(gif_frames, output_path=f"./election_{sim_id}.gif", delete_frames=delete_frames)
+            make_gif_scatter(gif_frames, output_path=f"./gifs/election_{sim_id}.gif", delete_frames=delete_frames)
         if save_results:
             self.dump_results(sim_id)
         else:
