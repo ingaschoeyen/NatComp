@@ -1,12 +1,7 @@
 import numpy as np
 from geometry import *
-import math
-from voter import Voter, Candidate, System
+from agents import Voter, Candidate, System
 
-
-# TODO get polling results
-def get_polls(voters : list[Voter], candidates : list[Candidate], prev_polls : list[float], system : System):
-    pass
 
 def trunc_votes(vote_counts : list[int], vote_sum : int, threshold : float):
     return [votes if votes / vote_sum >= threshold else 0 for votes in vote_counts]
@@ -17,7 +12,7 @@ def sum_votes(voters : list[Voter], candidates : list[Candidate], polls : list[f
     votes_counts = [0 for _ in range(len(candidates))]
 
     for voter in voters:
-        for i, vote in enumerate(voter.get_votes(candidates, polls, system, dist_metric)):
+        for i, vote in enumerate(voter.get_votes(candidates=candidates, polls=polls, system=system, dist_metric=dist_metric)):
             votes_counts[i] += vote
 
     return votes_counts
