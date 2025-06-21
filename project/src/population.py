@@ -188,8 +188,8 @@ class Population():
                 local_neighborhood=loc_neigh,
                 campaigns=[cand.coords for cand in self.candidates])
 
-    # TODO (*Complete*) Update the candidates based on voters' preferences and campaigns
-    def campaign(self, avg_voter_position = None, polls = None):
+    # Candidate position update based on the average position of the voters (theirs or oppositions)
+    def campaign_voters(self, avg_voter_position: list[Point] = None, polls: list[float] = None):
         """
         Updates the candidates' positions based on the voters' preferences and campaigns.
         This can include adjusting their positions to better align with the average position of voters who voted for them.
@@ -209,7 +209,8 @@ class Population():
                 case Approach.HONEST:
                     return
 
-    def update_candidates(self, results: list[float] = None):
+    # Candidate position update based on the position of other candidates
+    def campaign_candidates(self, results: list[float] = None):
         """
         Simulates campaigning by candidates, which can include adjusting their positions based on the average voter position.
         This can be implemented as a separate method or integrated into the update_candidates method.

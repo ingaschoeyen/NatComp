@@ -56,18 +56,19 @@ class Simulation():
 
         for rounds in range(self.n_rounds):
             print(f"Running round {rounds + 1}/{self.n_rounds}")
-            # Update voter and candidate positions based on last rounds results
 
+            # Candidates campaign based on the results of the previous election
+            population.campaign_candidates(results)
+
+            # Polling and campaigning between elections
             population.update_voters(election.system)
             for i in range(self.n_polls):
                 polls, avg_voter_pos = population.take_poll(system=election.system, last_poll=polls)
-                population.campaign(avg_voter_position=avg_voter_pos, polls=polls)
+                population.campaign_voters(avg_voter_position=avg_voter_pos, polls=polls)
                 population.update_voters(system=election.system, polls=polls)
 
-            # run election
+            # Election
             votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy = election.run_election(polls=polls)
-            # candidates update based on election
-            population.update_candidates(results) # TODO this is essentially the same as population.campaign
 
             # store results
             if plot_results:
