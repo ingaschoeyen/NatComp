@@ -97,14 +97,14 @@ def total_utility(voters : list[Voter], candidates : list[Candidate], dist_metri
 # and compares it to average obtained from voting randomly ("worst possible system")
 # TODO alternatives - measure utility non-linearly, use softmax?
 def vse_util(voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
-    assert np.isclose(sum(results), 1) # <results> must be a distribution on parties
+    assert np.isclose(sum(results), 1), f'vse_util error, sum of results is {sum(results)}, results are {results}' # <results> must be a distribution on parties
 
     utilities = total_utility(voters, candidates, dist_metric)
     best = min(utilities)
     current = sum([perc * util for perc, util in zip(results, utilities)])
     random = sum(utilities) / len(utilities)
 
-    assert random >= best # In worst case, we can always vote randomly
+    assert random >= best, f'vse_util error, worst case, best = {best}' # In worst case, we can always vote randomly
     return (random - current) / (random - best) if random - best != 0 else 1 # In case random == best
 
 # TODO Voter satisfaction efficiency - maximise compromise approach
@@ -126,7 +126,7 @@ def vse_comp(voters : list[Voter], candidates : list[Candidate], results : list[
     return max(0.0, min(1.0, score))
 
 def vse_vdist_comp(voters : list[Voter], candidates : list[Candidate], results : list[float], dist_metric = distance_euclid):
-    assert np.isclose(sum(results), 1) # <results> must be a distribution on parties
+    assert np.isclose(sum(results), 1), f'vse_vdist_comp error, sum of results is {sum(results)}, results are {results}' # <results> must be a distribution on parties
 
     weighted_sums = []
     for voter in voters:
