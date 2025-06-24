@@ -171,11 +171,60 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
     plt.show()
     plt.savefig(output_path)
     plt.close()
-# TODO other types of plots
+
+def plot_dynamics(ax: plt.Axes, sim_res: list, pop_name: str):
+    rounds = len(sim_res)
+    results = [result['votes_per'] for result in sim_res]
+    cand_results = np.reshape(results[:], (rounds, len(results[0])))
+
+    prev = 0
+    for i in range(len(results[0])):
+        ax.fill_between(range(rounds), prev, prev+cand_results[:, i], label=f'Candidate {i+1}', color=COLOURS[i % len(COLOURS)], alpha=0.5)
+        prev += cand_results[:, i]
+
+    ax.set_xlabel('Round')
+    ax.set_ylabel('Votes')
+    ax.set_title(f'Vote Composition for {pop_name}')
+    ax.legend(loc='center right', bbox_to_anchor=(1, 0.5))
+    ax.grid()
+
+def plot_stats(ax: plt.Axes, res: list, n_sims: int, n_rounds: int, pop_name: str):
+    vse_comp, vse_util, vse_vdist_comp, norm_entropy = np.zeros((n_sims, n_rounds)), np.zeros((n_sims, n_rounds)), np.zeros((n_sims, n_rounds)), np.zeros((n_sims, n_rounds))
+    for j, results in enumerate(res):
+        vse_comp[j, :] = np.reshape([r.get('vse_comp')  for r in results], (1, n_rounds))
+        vse_util[j, :] = np.reshape([r.get('vse_util') for r in results], (1, n_rounds))
+        vse_vdist_comp[j, :] = np.reshape([r.get('vse_vdist_comp') for r in results], (1, n_rounds))
+        norm_entropy = np.reshape([r.get('norm_entropy') for r in results], (1, n_rounds))
+    # average over simulations
+    vse_comp_mean = np.mean(vse_comp, axis=0)
+    vse_util_mean = np.mean(vse_util, axis=0)
+    vse_vdist_comp_mean = np.mean(vse_vdist_comp, axis=0)
+    norm_entropy_mean = np.mean(norm_entropy, axis=0)
+    # get std
+    vse_comp_std = np.std(vse_comp, axis=0)
+    vse_util_std = np.std(vse_util, axis=0)
+    vse_vdist_comp_std = np.std(vse_vdist_comp, axis=0)
+    norm_entropy_std = np.std(norm_entropy, axis=0)
+    # plot results
+
+    ax.plot(vse_comp_mean, label='VSE Comp', color='blue')
+    ax.fill_between(range(n_rounds), vse_comp_mean - vse_comp_std, vse_comp_mean + vse_comp_std, color='blue', alpha=0.2)
+    ax.plot(vse_util_mean, label='VSE Util', color='orange')
+    ax.fill_between(range(n_rounds), vse_util_mean - vse_util_std, vse_util_mean + vse_util_std, color='orange', alpha=0.2)
+    ax.plot(vse_vdist_comp_mean, label='VSE VDist Comp', color='green')
+    ax.fill_between(range(n_rounds), vse_vdist_comp_mean - vse_vdist_comp_std, vse_vdist_comp_mean + vse_vdist_comp_std, color='green', alpha=0.2)
+    ax.plot(norm_entropy_mean, label='Norm Entropy', color='red')
+    ax.fill_between(range(n_rounds), norm_entropy_mean - norm_entropy_std, norm_entropy_mean + norm_entropy_std, color='red', alpha=0.2)
+    ax.set_title(f'Simulation Results for {pop_name}')
+    ax.set_xlabel('Round')
+    ax.set_ylabel('Value')
+    ax.legend()
+    ax.grid()
 
 def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: list[float], results: list[float], system: System, cur_round, vse_util, output_path: str = "./election_gif_frame.png"):
 
     max_radius = 1000 # radius of the max size of candidates to multiply by results
+    min_radius = 100  # radius of the min size of candidates (in case they do not get many votes)
     fig, ax = plt.subplots(1, 3, figsize=(10, 5))
     plt.subplot(1, 3, 1)
 
@@ -200,7 +249,7 @@ def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: lis
 
     ax[0].scatter(cands_points[:,0], cands_points[:,1],
                c=cand_colours,
-               s=[max(max_radius * result, 20) for result in results],
+               s=[max(max_radius * result, min_radius) for result in results],
                alpha=0.5, label=[cand.approach.name for cand in candidates])
     ax[0].set_aspect('equal', adjustable='box')
     ax[0].text(-0.3, 1.15, f"VSE (util): {round(vse_util, 2)}", transform=ax[0].transAxes, fontsize=12, verticalalignment='top')
@@ -231,3 +280,5 @@ def make_gif_scatter(frames, output_path: str = "./election.gif", delete_frames:
         for gif_im in frames:
             # delete the frame file
             os.remove(gif_im)
+
+
