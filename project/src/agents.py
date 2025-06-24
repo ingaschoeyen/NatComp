@@ -73,7 +73,7 @@ class Voter():
     votes: np.ndarray  # Votes for candidates, indexed by candidate id
     id: int = 0  # Unique identifier for the voter
 
-    def __init__(self, coords: Point, strat : Strategy, params: dict, n_candidates : int = 0, id: int = 0):
+    def __init__(self, coords: Point, strat : Strategy, params: dict = default_voter_params, n_candidates : int = 0, id: int = 0):
         self.best_preference = params.get("best_preference", default_voter_params["best_preference"])
         self.worst_tolerance = params.get("worst_tolerance", default_voter_params["worst_tolerance"])
         self.campaign_weight = params.get("campaign_weight", default_voter_params["campaign_weight"])
