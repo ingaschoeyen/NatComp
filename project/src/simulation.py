@@ -38,7 +38,7 @@ class Simulation():
             json.dump(self.output_sims, f)
         print('results dumped')
 
-    def run_election_cycles(self, save_results: bool = True, plot_results: bool = True, make_gif: bool = False, delete_frames: bool = True, verbose: bool = True):
+    def run_election_cycles(self, save_results: bool = True, make_gif: bool = False, delete_frames: bool = True, verbose: bool = True):
         # set up like this so that we can run multiple simulations with different parameters and store results in one json file
         # create unique sim id
         sim_id = str(datetime.now()) + str(np.random.randint(0, 1000000))
@@ -72,8 +72,6 @@ class Simulation():
             votes_counts, results, vse_util, vse_comp, vse_vdist_comp, norm_entropy = election.run_election(polls=polls)
 
             # store results
-            if plot_results:
-                election.plot_election(population.voters, population.candidates, votes_counts, results, output_path=f"./election_round_{rounds + 1}.png")
             self.output_sims.get('results').append({'round': rounds,'votes_count': votes_counts, 'votes_per': results, 'vse_util': vse_util, 'vse_comp': vse_comp, 'vse_vdist_comp': vse_vdist_comp, 'norm_entropy': norm_entropy})
             if make_gif:
                 fig, frame_path = get_gif_scatter(population.voters, population.candidates, polls, results, election.system, rounds, vse_util,  output_path=f"./election_round_{rounds + 1}_scatter.png")
@@ -85,8 +83,7 @@ class Simulation():
             make_gif_scatter(gif_frames, output_path=f"./gifs/election_{sim_id}.gif", delete_frames=delete_frames)
         if save_results:
             self.dump_results(sim_id)
-        else:
-            return self.output_sims
+        return self.output_sims
 
 def run_multiple_voting_systems(voting_systems: list[System], population: Population, params : Dict[str, Any] = default_sim_params):
     """
