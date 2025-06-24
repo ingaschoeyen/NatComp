@@ -176,6 +176,7 @@ def plot_sim_dynamics(simulation_results: list, output_path: str = "./simulation
 def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: list[float], results: list[float], system: System, cur_round, vse_util, output_path: str = "./election_gif_frame.png"):
 
     max_radius = 1000 # radius of the max size of candidates to multiply by results
+    min_radius = 100  # radius of the min size of candidates (in case they do not get many votes)
     fig, ax = plt.subplots(1, 3, figsize=(10, 5))
     plt.subplot(1, 3, 1)
 
@@ -200,7 +201,7 @@ def get_gif_scatter(voters: list[Voter], candidates: list[Candidate], polls: lis
 
     ax[0].scatter(cands_points[:,0], cands_points[:,1],
                c=cand_colours,
-               s=[max(max_radius * result, 20) for result in results],
+               s=[max(max_radius * result, min_radius) for result in results],
                alpha=0.5, label=[cand.approach.name for cand in candidates])
     ax[0].set_aspect('equal', adjustable='box')
     ax[0].text(-0.3, 1.15, f"VSE (util): {round(vse_util, 2)}", transform=ax[0].transAxes, fontsize=12, verticalalignment='top')
